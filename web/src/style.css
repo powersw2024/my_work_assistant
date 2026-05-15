@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f9fafb;
+}
+
+/* 解决Vue 3与Tailwind的一些兼容性问题 */
+#app {
+  height: 100vh;
+  width: 100%;
+}
+
+/* 卡片样式 */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md flex flex-col;
+}
+
+/* 按钮样式 */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer;
+}
+
+.btn-primary {
+  @apply btn bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500;
+}
+
+.btn-secondary {
+  @apply btn bg-gray-200 hover:bg-gray-300 text-gray-800 focus:ring-gray-500;
+}
+
+.btn-success {
+  @apply btn bg-green-600 hover:bg-green-700 text-white focus:ring-green-500;
+}
+
+.btn-danger {
+  @apply btn bg-red-600 hover:bg-red-700 text-white focus:ring-red-500;
+}
+
+.btn-outline {
+  @apply btn bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+}
+
+/* 输入框样式 */
+.input-field {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200;
+}
+
+/* 表格样式 */
+.table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+
+.table th {
+  @apply px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.table td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+}
+
+.table tr:nth-child(even) {
+  @apply bg-gray-50;
+}
+
+/* 标签样式 */
+.tag {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.tag-blue {
+  @apply tag bg-blue-100 text-blue-800;
+}
+
+.tag-green {
+  @apply tag bg-green-100 text-green-800;
+}
+
+.tag-yellow {
+  @apply tag bg-yellow-100 text-yellow-800;
+}
+
+.tag-red {
+  @apply tag bg-red-100 text-red-800;
+}
+
+/* 进度条样式 - 限制最大高度 */
+.progress-bar {
+  @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+}
+
+.progress-value {
+  @apply h-full bg-blue-600 rounded-full max-h-2;
+}
+
+/* 阴影效果 */
+.shadow-card {
+  @apply shadow-lg;
+}
+
+/* 增加一些新的样式 */
+.dark {
+  background-color: #1a202c;
+  color: #ffffff;
+}
+
+.dark .card {
+  background-color: #2d3748;
+  color: #ffffff;
+}
+
+.dark .btn-primary {
+  background-color: #3182ce;
+}
+
+.dark .btn-secondary {
+  background-color: #4a5568;
+}
+
+.dark .input-field {
+  background-color: #2d3748;
+  color: #ffffff;
+  border-color: #4a5568;
+}
+
+/* 增加悬停效果 */
+.btn:hover {
+  transform: scale(1.05);
+}
+
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+

@@ -1,0 +1,39 @@
+{
+  "name": "project-management-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Frontend for the project management app using Vue 3",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "project",
+    "management",
+    "vue",
+    "frontend"
+  ],
+  "author": "Assistant",
+  "license": "MIT",
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "dayjs": "^1.11.13",
+    "vue": "^3.5.12",
+    "vue-router": "^4.6.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "autoprefixer": "^10.4.20",
+    "node-fetch": "^2.7.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "vite": "^5.4.8"
+  }
+}
