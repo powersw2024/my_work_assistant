@@ -22,16 +22,19 @@
   </div>
 </template>
 
-<script>
-// import HeaderComponent from './components/HeaderComponent.vue'; // 已被删除
+<script lang="ts">
+import { defineComponent } from 'vue';
 import NewProjectModal from './components/NewProjectModal.vue';
 import LogEditModal from './components/LogEditModal.vue';
 import SettingsModal from './components/SettingsModal.vue';
 
-export default {
+interface Settings {
+  [key: string]: any;
+}
+
+export default defineComponent({
   name: 'App',
   components: {
-    // HeaderComponent, // 已被移除
     NewProjectModal,
     LogEditModal,
     SettingsModal
@@ -42,29 +45,27 @@ export default {
       showLogModal: false,
       showSettingsModal: false,
       selectedDate: '',
-      editingLog: {}
+      editingLog: {} as Record<string, any>
     }
   },
-  computed: {
-    // 这里可以放置一些通用计算属性
-  },
   methods: {
-    // 这里可以放置一些跨组件的方法
-    createProject(projectData) {
+    createProject(projectData: any) {
       // 这里可以处理创建项目的逻辑
+      console.log('创建项目:', projectData);
     },
-    saveLog(logData) {
+    saveLog(logData: any) {
       // 这里可以处理保存日志的逻辑
+      console.log('保存日志:', logData);
     },
-    saveSettings(settings) {
-      // 将设置保存到localStorage
+    saveSettings(settings: Settings) {
+      // 将设置保存到 localStorage
       localStorage.setItem('projectAppSettings', JSON.stringify(settings));
       
       alert('设置已保存');
       this.showSettingsModal = false;
     }
   }
-}
+});
 </script>
 
 <style>

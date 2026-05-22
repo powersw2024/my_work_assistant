@@ -117,62 +117,85 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+// 假设 Project 类型定义在此路径，如果不存在请根据实际项目结构调整或直接在下方定义 interface
+import type { Project } from '../utils/tauriApi'; 
+
+// 如果上述导入失败，可以使用本地定义：
+// interface Project {
+//   id: number | string;
+//   name: string;
+//   start_date?: string;
+//   end_date?: string;
+//   [key: string]: any;
+// }
+
+export default defineComponent({
   name: 'ProjectSelector',
   props: {
     projects: {
-      type: Array,
+      type: Array as () => Project[],
       required: true
     },
     selectedProjectId: {
-      type: [String, Number],
+      type: [String, Number] as unknown as () => string | number,
       required: true
     }
   },
-  emits: ['project-changed', 'new-project', 'edit-project', 'delete-project', 'select-project'],
+  emits: ['project-changed', 'new-project', 'edit-project', 'delete-project', 'select-project', 'open-settings'],
   methods: {
-    formatDate(dateString) {
+    formatDate(dateString?: string): string {
       if (!dateString) return '-';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('zh-CN', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit' 
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '-';
+        return date.toLocaleDateString('zh-CN', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit' 
+        });
+      } catch (error) {
+        console.error('日期格式化失败:', error);
+        return '-';
+      }
+    },
+    goToProjectDetail(projectId: number) {
+      // 双击时跳转到项目详情页
+      console.log('Navigating to project:', projectId);
+      this.$router.push(`/project/${projectId}`).catch(err => {
+        console.error('Navigation error:', err);
       });
     },
-    goToProjectDetail(projectId) {
-      // 双击时跳转到项目详情页
-      this.$router.push(`/project/${projectId}`);
-    },
-    selectProject(projectId) {
+    selectProject(projectId: number) {
       // 单击时选择项目
       this.$emit('project-changed', projectId);
     },
-    editProject(projectId) {
+    editProject(projectId: number) {
       this.$emit('edit-project', projectId);
     },
-    deleteProject(projectId) {
+    deleteProject(projectId: number) {
       if (confirm('确定要删除这个项目吗？此操作不可恢复。')) {
         this.$emit('delete-project', projectId);
       }
     },
-    projectStatus(projectId) {
+    projectStatus(projectId: number | string): string {
       // 由于无法获取日志数据，暂时基于项目是否存在判断状态
+      // 这里可以接入实际的逻辑来判断状态
       return '未开始';
     },
-    projectStatusClass(projectId) {
+    projectStatusClass(projectId: number | string): string {
       const status = this.projectStatus(projectId);
       return status === '进行中' ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium';
     },
-    getProjectLogCount(projectId) {
-      // 如果没有日志数据，返回0
+    getProjectLogCount(projectId: number | string): number {
+      // TODO: 从 API 获取实际的日志数量
       return 0;
     },
-    getProjectExpenseCount(projectId) {
-      // 如果没有费用数据，返回0
+    getProjectExpenseCount(projectId: number | string): number {
+      // TODO: 从 API 获取实际的费用数量
       return 0;
     }
   }
-}
+})
 </script>

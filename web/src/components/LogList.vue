@@ -18,7 +18,7 @@
               {{ getWeatherEmoji(log.weather) }} {{ log.weather }}
             </span>
             <span v-if="log.location"
-              class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded truncate max-width-[100px]">
+              class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded truncate max-w-[100px]">
               {{ log.location }}
             </span>
           </div>
@@ -56,15 +56,11 @@
   </div>
 </template>
 
-<style scoped>
-/* 隐藏按钮内的文本，只显示图标 */
-button span {
-  display: none;
-}
-</style>
+<script lang="ts">
+import { defineComponent } from 'vue';
+import type { WorkLog } from '../utils/tauriApi';
 
-<script>
-export default {
+export default defineComponent({
   name: 'LogList',
   props: {
     projectId: {
@@ -72,17 +68,17 @@ export default {
       required: true
     },
     projectName: {
-      type: String,
+      type: String as () => string,
       default: ''
     },
     logs: {
-      type: Array,
+      type: Array as () => WorkLog[],
       default: () => []
     }
   },
   emits: ['delete-log', 'edit-log'],
   methods: {
-    formatDate(dateString) {
+    formatDate(dateString?: string): string {
       if (!dateString) return '';
       const date = new Date(dateString);
       return date.toLocaleDateString('zh-CN', {
@@ -91,19 +87,12 @@ export default {
         day: '2-digit'
       });
     },
-    formatExecutor(executor) {
-      if (!executor) return '';
-      // 如果executor是数组，将其转换为用顿号分隔的字符串
-      if (Array.isArray(executor)) {
-        return executor.join('、');
-      }
-      // 如果executor是逗号分隔的字符串，将其转换为用顿号分隔的字符串
-      if (typeof executor === 'string') {
-        return executor.split(',').join('、');
-      }
+    formatExecutor(executor?: string | string[]): string {
+      if (!executor) return '未指定';
+      if (Array.isArray(executor)) return executor.join(', ');
       return executor;
     },
-    formatDateTime(dateString) {
+    formatDateTime(dateString?: string): string {
       if (!dateString) return '';
       const date = new Date(dateString);
       return date.toLocaleString('zh-CN', {
@@ -114,8 +103,8 @@ export default {
         minute: '2-digit'
       });
     },
-    getWeatherEmoji(weather) {
-      const emojiMap = {
+    getWeatherEmoji(weather: string): string {
+      const emojiMap: Record<string, string> = {
         '晴': '☀️',
         '雨': '🌧️',
         '雪': '❄️',
@@ -125,9 +114,9 @@ export default {
       };
       return emojiMap[weather] || '🌈';
     },
-    copyLogToClipboard(log) {
+    copyLogToClipboard(log: WorkLog) {
       // 构建日志格式
-      const logText = `${this.projectName}-${log.location || ''}（${this.formatExecutor(log.executor)}）-${log.weather || ''}\n今日工作量：\n\t1、${this.parseContent(log.content).join('\n\t2、')}\n明日计划：\n\t1、${this.parseContent(log.next_day_plan).join('\n\t2、')}`;
+      const logText = `${this.projectName}-${log.location || ''}（${this.formatExecutor(log.executor)}）-${log.weather || ''}\n今日工作量：\n\t1、${this.parseContent(log.content).join('\n\t2、')}\n明日计划：\n\t1、${this.parseContent(log.next_day_plan || '').join('\n\t2、')}`;
 
       // 复制到剪贴板
       navigator.clipboard.writeText(logText).then(() => {
@@ -144,7 +133,7 @@ export default {
         // 复制成功，不显示提示
       });
     },
-    parseContent(content) {
+    parseContent(content: string): string[] {
       if (!content) return [];
       // 按换行符分割内容，过滤掉空行和只包含空白字符的行
       return content.split(/\r?\n/)
@@ -152,5 +141,12 @@ export default {
         .filter(line => line !== '');  // 过滤空行
     }
   }
-};
+});
 </script>
+
+<style scoped>
+/* 隐藏按钮内的文本，只显示图标 */
+button span {
+  display: none;
+}
+</style>

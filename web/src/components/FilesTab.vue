@@ -57,8 +57,9 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+export default defineComponent({
   name: 'FilesTab',
   // 移除props和emits，因为暂时不需要文件管理功能
   // props: {
@@ -86,5 +87,5 @@ export default {
     //   this.$emit('delete-file', file);
     // }
   }
-};
+})
 </script>

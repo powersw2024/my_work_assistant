@@ -3,7 +3,7 @@
     <label v-if="label" class="block text-sm font-medium text-gray-700 mb-1">{{ label }}</label>
     <select 
       :value="modelValue"
-      @change="$emit('update:modelValue', $event.target.value)"
+      @change="(e: Event) => $emit('update:modelValue', (e.target as HTMLSelectElement).value)"
       :class="['input-field w-full', inputClass]"
       :disabled="disabled"
     >
@@ -14,8 +14,9 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+export default defineComponent({
   name: 'Selector',
   props: {
     modelValue: {
@@ -27,7 +28,7 @@ export default {
       default: ''
     },
     options: {
-      type: Array,
+      type: Array as () => Array<{ value: string | number; label: string }>,
       default: () => []
     },
     disabled: {
@@ -40,7 +41,7 @@ export default {
     }
   },
   emits: ['update:modelValue']
-};
+});
 </script>
 
 <style scoped>

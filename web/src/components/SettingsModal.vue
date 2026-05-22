@@ -278,8 +278,11 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+import { personApi, expenseApi, settingsApi } from '../utils/tauriApi';
+
+export default defineComponent({
   name: 'SettingsModal',
   props: {
     initialSettings: {
@@ -297,29 +300,70 @@ export default {
   emits: ['close', 'save-settings'],
   data() {
     return {
-      settings: { ...this.initialSettings },
+      settings: { 
+        personnel: [] as string[],
+        expense_categories: {
+          mainCategories: [] as string[],
+          categoriesByParent: {} as Record<string, string[]>
+        },
+        voucher_types: [] as string[]
+      },
       newPerson: '',
       newMainCategory: '',
       newSubCategory: '',
       newVoucherType: '',
-      selectedMainCategory: ''
+      selectedMainCategory: '',
+      loading: false,
+      error: null as string | null
     };
   },
   async mounted() {
-    // 页面加载完成后获取设置数据
     await this.loadSettings();
   },
   methods: {
     async loadSettings() {
+      this.loading = true;
+      this.error = null;
       try {
-        const response = await fetch('/api/settings');
-        if (response.ok) {
-          this.settings = await response.json();
-        } else {
-          console.error('加载设置失败:', response.statusText);
-        }
-      } catch (error) {
-        console.error('加载设置时出错:', error);
+        // 加载人员列表
+        const persons = await personApi.getPersons();
+        this.settings.personnel = persons.map(p => p.name);
+        
+        // 加载费用类别
+        const categories = await expenseApi.getCategories();
+        const mainCategoriesMap = new Map<string, number>();
+        const mainCategories: string[] = [];
+        const categoriesByParent: Record<string, string[]> = {};
+        
+        categories.forEach(cat => {
+          if (!cat.parent_id) {
+            mainCategoriesMap.set(cat.name, cat.id);
+            mainCategories.push(cat.name);
+            categoriesByParent[cat.name] = [];
+          }
+        });
+        
+        categories.forEach(cat => {
+          if (cat.parent_id) {
+            const parent = categories.find(c => c.id === cat.parent_id);
+            if (parent && categoriesByParent[parent.name]) {
+              categoriesByParent[parent.name].push(cat.name);
+            }
+          }
+        });
+        
+        this.settings.expense_categories.mainCategories = mainCategories;
+        this.settings.expense_categories.categoriesByParent = categoriesByParent;
+        
+        // 加载凭证类型
+        const voucherTypes = await expenseApi.getVoucherTypes();
+        this.settings.voucher_types = voucherTypes.map(vt => vt.name);
+        
+      } catch (err: any) {
+        console.error('加载设置失败:', err);
+        this.error = '加载设置失败: ' + err.message;
+      } finally {
+        this.loading = false;
       }
     },
     addPerson() {
@@ -375,28 +419,150 @@ export default {
       this.settings.voucher_types.splice(index, 1);
     },
     async saveSettings() {
+      this.loading = true;
+      this.error = null;
       try {
-        const response = await fetch('/api/settings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.settings)
+        // 1. 保存人员列表 - 先删除所有再重新添加（简化方案）
+        // TODO: 后续优化为增量更新
+        
+        // 获取当前数据库中的人员ID
+        const currentPersons = await personApi.getPersons();
+        const currentPersonMap = new Map<string, number>();
+        currentPersons.forEach(p => {
+          currentPersonMap.set(p.name, p.id);
         });
         
-        if (response.ok) {
-          this.$emit('save-settings', { ...this.settings });
-          // 成功保存后，刷新页面上的数据显示
-          await this.loadSettings();
-        } else {
-          const error = await response.json();
-          alert(`保存失败: ${error.error}`);
+        // 删除不在新列表中的人员
+        for (const person of currentPersons) {
+          if (!this.settings.personnel.includes(person.name)) {
+            await personApi.deletePerson(person.id);
+          }
         }
-      } catch (error) {
-        console.error('保存设置时出错:', error);
-        alert('保存设置时出错');
+        
+        // 添加新人员或更新现有人员
+        for (const personName of this.settings.personnel) {
+          const existingId = currentPersonMap.get(personName);
+          if (!existingId) {
+            // 新增人员
+            await personApi.createPerson({ name: personName });
+          }
+          // 如果存在且名称相同，则无需更新
+        }
+        
+        // 2. 保存费用类别
+        // 先获取现有的类别
+        const currentCategories = await expenseApi.getCategories();
+        const currentMainCategories = new Map<string, number>();
+        const deletedCategoryIds: number[] = [];
+        
+        currentCategories.forEach(cat => {
+          if (!cat.parent_id) {
+            currentMainCategories.set(cat.name, cat.id);
+          }
+        });
+        
+        // 删除不再存在的主类别及其子类别
+        for (const category of currentCategories) {
+          const categoryName = category.name;
+          const isMainCategory = !category.parent_id;
+          
+          if (isMainCategory) {
+            if (!this.settings.expense_categories.mainCategories.includes(categoryName)) {
+              // 主类别被删除，需要删除其所有子类别
+              currentCategories.forEach(subCat => {
+                if (subCat.parent_id === category.id) {
+                  deletedCategoryIds.push(subCat.id);
+                }
+              });
+              deletedCategoryIds.push(category.id);
+            }
+          } else {
+            // 子类别
+            const parent = currentCategories.find(c => c.id === category.parent_id);
+            if (parent) {
+              const parentName = parent.name;
+              const mainCats = this.settings.expense_categories.categoriesByParent[parentName];
+              if (!mainCats || !mainCats.includes(categoryName)) {
+                deletedCategoryIds.push(category.id);
+              }
+            }
+          }
+        }
+        
+        // 执行删除
+        for (const id of deletedCategoryIds) {
+          await expenseApi.deleteCategory(id);
+        }
+        
+        // 添加或更新主类别
+        for (const mainCat of this.settings.expense_categories.mainCategories) {
+          const existingId = currentMainCategories.get(mainCat);
+          if (!existingId) {
+            // 新增主类别
+            await expenseApi.createCategory({ 
+              name: mainCat, 
+              parent_id: null
+            });
+          }
+        }
+        
+        // 添加或更新子类别
+        for (const [parentName, subCategories] of Object.entries(this.settings.expense_categories.categoriesByParent as Record<string, string[]>)) {
+          const parentId = currentMainCategories.get(parentName);
+          // 重新获取类别列表以获取最新的主类别ID
+          const refreshedCategories = await expenseApi.getCategories();
+          const freshMainCat = refreshedCategories.find(c => c.name === parentName && !c.parent_id);
+          
+          if (freshMainCat) {
+            for (const subCat of subCategories) {
+              const exists = refreshedCategories.some(c => 
+                c.name === subCat && c.parent_id === freshMainCat.id
+              );
+              if (!exists) {
+                await expenseApi.createCategory({
+                  name: subCat,
+                  parent_id: freshMainCat.id
+                });
+              }
+            }
+          }
+        }
+
+        // 3. 保存凭证类型
+        const currentVoucherTypes = await expenseApi.getVoucherTypes();
+        const currentVoucherTypeMap = new Map<string, number>();
+        currentVoucherTypes.forEach(vt => {
+          currentVoucherTypeMap.set(vt.name, vt.id);
+        });
+        
+        // 删除不在新列表中的凭证类型
+        for (const vt of currentVoucherTypes) {
+          if (!this.settings.voucher_types.includes(vt.name)) {
+            await expenseApi.deleteVoucherType(vt.id);
+          }
+        }
+        
+        // 添加新的凭证类型
+        for (const vtName of this.settings.voucher_types) {
+          const existingId = currentVoucherTypeMap.get(vtName);
+          if (!existingId) {
+            await expenseApi.createVoucherType({ name: vtName });
+          }
+        }
+        
+        // 保存成功，触发事件关闭弹窗
+        this.$emit('save-settings', { ...this.settings });
+        alert('设置保存成功！');
+        this.$emit('close');
+        
+      } catch (error: any) {
+        console.error('保存设置失败:', error);
+        this.error = '保存设置失败: ' + error.message;
+        alert('保存设置失败: ' + error.message);
+      } finally {
+        this.loading = false;
       }
     }
   }
-};
+});
 </script>

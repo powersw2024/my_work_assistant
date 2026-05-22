@@ -36,10 +36,28 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import LogForm from './LogForm.vue';
+import { personApi } from '../utils/tauriApi';
+import type { Person } from '../utils/tauriApi';
 
-export default {
+export interface NewLogModalData {
+  projectId: number;
+  initialData?: {
+    id?: number | null;
+    project_id?: number;
+    log_date?: string;
+    executor?: any[];
+    weather?: string;
+    location?: string;
+    content?: string;
+    next_day_plan?: string;
+    author?: string;
+  };
+}
+
+export default defineComponent({
   name: 'NewLogModal',
   components: {
     LogForm
@@ -50,26 +68,26 @@ export default {
       required: true
     },
     initialData: {
-      type: Object,
+      type: Object as () => NewLogModalData['initialData'],
       default: () => ({})
     }
   },
   data() {
     return {
       logData: {
-        id: null,
-        project_id: null,
-        log_date: '',
-        executor: [], // 更改为executor并支持多选
-        weather: '晴', // 默认为晴
-        location: '',
-        content: '',
-        next_day_plan: '',
-        author: '系统用户' // 添加作者字段
+        id: null as number | null,
+        project_id: null as number | null,
+        log_date: '' as string,
+        executor: [] as any[],
+        weather: '晴' as string,
+        location: '' as string,
+        content: '' as string,
+        next_day_plan: '' as string,
+        author: '系统用户' as string
       },
-      personnelList: [],
-      recentLogs: [],
-      projectName: ''
+      personnelList: [] as string[],
+      recentLogs: [] as any[],
+      projectName: '' as string
     };
   },
   async mounted() {
@@ -86,7 +104,7 @@ export default {
             id: newVal.id || null,
             project_id: newVal.project_id || this.projectId,
             log_date: newVal.log_date || new Date().toISOString().split('T')[0],
-            executor: newVal.executor ? (Array.isArray(newVal.executor) ? newVal.executor : newVal.executor.split(',')) : [],
+            executor: newVal.executor ? (Array.isArray(newVal.executor) ? newVal.executor.join(',') : newVal.executor) : '',
             weather: newVal.weather || '晴',
             location: newVal.location || '',
             content: newVal.content || '',
@@ -99,7 +117,7 @@ export default {
             id: null,
             project_id: this.projectId,
             log_date: new Date().toISOString().split('T')[0], // 默认今天
-            executor: [],
+            executor: '',
             weather: '晴',
             location: '',
             content: '',
@@ -108,13 +126,14 @@ export default {
           };
           
           // 重要：如果是在新建模式下，确保重置表单数据
-          if (this.$refs.logFormRef && this.$refs.logFormRef.resetFormForNewLog) {
+          if (this.$refs.logFormRef && (this.$refs.logFormRef as any).resetFormForNewLog) {
             this.$nextTick(() => {
-              this.$refs.logFormRef.resetFormForNewLog();
+              (this.$refs.logFormRef as any).resetFormForNewLog();
             });
           }
         }
       },
+
       immediate: true
     },
     projectId: {
@@ -130,36 +149,32 @@ export default {
   methods: {
     async loadPersonnel() {
       try {
-        const response = await fetch('/api/personnel');
-        if (response.ok) {
-          this.personnelList = await response.json();
-        }
+        const persons: Person[] = await personApi.getPersons();
+        // 从 Person 对象中提取 name 字段
+        this.personnelList = persons.map(p => p.name);
       } catch (error) {
         console.error('加载人员列表失败:', error);
+        this.personnelList = [];
       }
     },
     async loadRecentLogs() {
-      try {
-        const response = await fetch(`/api/worklogs/project/${this.projectId}?limit=10`);
-        if (response.ok) {
-          this.recentLogs = await response.json();
-        }
-      } catch (error) {
-        console.error('加载最近日志失败:', error);
-      }
+      // TODO: 使用 Tauri API 而不是 fetch
+      // const response = await fetch(`/api/worklogs/project/${this.projectId}?limit=10`);
+      // if (response.ok) {
+      //   this.recentLogs = await response.json();
+      // }
+      this.recentLogs = [];
     },
     async loadProjectName() {
-      try {
-        const response = await fetch(`/api/projects/${this.projectId}`);
-        if (response.ok) {
-          const project = await response.json();
-          this.projectName = project.name;
-        }
-      } catch (error) {
-        console.error('加载项目名称失败:', error);
-      }
+      // TODO: 使用 Tauri API 而不是 fetch
+      // const response = await fetch(`/api/projects/${this.projectId}`);
+      // if (response.ok) {
+      //   const project = await response.json();
+      //   this.projectName = project.name;
+      // }
+      this.projectName = '';
     },
-    handleLogSubmit(formData) {
+    handleLogSubmit(formData: any) {
       // 确保项目ID包含在提交的数据中
       const logData = {
         ...formData,
@@ -170,16 +185,17 @@ export default {
     // 提交表单的方法
     submitForm() {
       // 手动触发LogForm中的submitLog方法
-      this.$refs.logFormRef.submitLog();
+      (this.$refs.logFormRef as any)?.submitLog();
     },
     // 当模态框关闭时，如果是新建模式，清理草稿数据
     onModalClose() {
       // 只有在新建模式下才清理草稿数据
       if (!this.logData.id) {
-        this.$refs.logFormRef.clearFormDataFromLocalStorage();
+        (this.$refs.logFormRef as any)?.clearFormDataFromLocalStorage();
       }
       this.$emit('close');
     }
-  }
-};
+  },
+  emits: ['save', 'close']
+});
 </script>

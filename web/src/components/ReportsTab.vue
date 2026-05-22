@@ -4,10 +4,11 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import ExpenseReport from './ExpenseReport.vue';
 
-export default {
+export default defineComponent({
   name: 'ReportsTab',
   components: {
     ExpenseReport
@@ -26,5 +27,5 @@ export default {
       default: () => null
     }
   }
-};
+});
 </script>

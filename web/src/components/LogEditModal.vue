@@ -42,43 +42,45 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import LogForm from './LogForm.vue';
+import type { WorkLog } from '../utils/tauriApi';
 
-export default {
+export default defineComponent({
   name: 'LogEditModal',
   components: {
     LogForm
   },
   props: {
     logData: {
-      type: Object,
+      type: Object as () => Partial<WorkLog>,
       required: true
     },
     selectedDate: {
-      type: String,
+      type: String as () => string,
       default: ''
     },
     personnel: {
-      type: Array,
+      type: Array as () => string[],
       default: () => []
     },
     recentLogs: {
-      type: Array,
+      type: Array as () => any[],
       default: () => []
     }
   },
   emits: ['close', 'save'],
   methods: {
-    handleLogSubmit(formData) {
+    handleLogSubmit(formData: WorkLog) {
       // 触发保存事件
       this.$emit('save', formData);
     },
     // 提交表单的方法
     submitForm() {
       // 手动触发LogForm中的submitLog方法
-      this.$refs.logFormRef.submitLog();
+      (this.$refs.logFormRef as any)?.submitLog();
     }
   }
-}
+})
 </script>

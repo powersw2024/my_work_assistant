@@ -1,4 +1,4 @@
- # Node.js
+# Node.js
 node_modules/
 npm-debug.log
 yarn-error.log
@@ -8,25 +8,15 @@ yarn-debug.log
 .yarn
 
 # Build outputs
-dist/
-dist-electron/
-out/
-build/
-*.dmg
-*.exe
-*.AppImage
-*.deb
-*.rpm
+web/dist/
+
+# Rust and Tauri
+src-tauri/target/
+*.rs.bk
 
 # Database
 *.sqlite
 *.db
-database.sqlite
-
-# Uploads and temp files
-uploads/
-temp/
-tmp/
 
 # IDE and editor
 .vscode/
@@ -46,13 +36,5 @@ logs
 .env.test.local
 .env.production.local
 
-# Dependency directories
-jspm_packages/
-bower_components/
-
 # Misc
-.DS_Store
 Thumbs.db
-
-# users
-templates/

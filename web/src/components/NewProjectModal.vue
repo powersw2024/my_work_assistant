@@ -74,49 +74,68 @@
   </div>
 </template>
 
-<script>
-// 定义一个函数供data使用，因为data函数中无法访问this
-function getDefaultStartDate() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+<script lang="ts">
+import { defineComponent } from 'vue';
+import type { Project } from '../utils/tauriApi';
+
+interface LocalProjectData {
+  id?: number;
+  name: string;
+  description?: string;
+  start_date: string | null;
+  end_date: string | null;
+  status: string;
 }
 
-export default {
+interface ProjectError {
+  name: string;
+}
+
+export default defineComponent({
   name: 'NewProjectModal',
   props: {
     initialData: {
-      type: Object,
+      type: Object as () => Partial<Project> | null,
       default: () => null
     },
     isEditing: {
-      type: Boolean,
+      type: Boolean as () => boolean,
       default: false
     },
     existingProjects: {
-      type: Array,
+      type: Array as () => Project[],
       default: () => []
     }
   },
   emits: ['close', 'create', 'update'],
   data() {
+    const getDefaultStartDate = (): string => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     return {
       localProject: {
+        id: undefined as number | undefined,
         name: '',
-        start_date: getDefaultStartDate(), // 使用外部函数
+        description: '',
+        start_date: getDefaultStartDate(),
         end_date: null,
         status: '进行中'
-      },
+      } as LocalProjectData,
       error: {
         name: ''
-      }
+      } as ProjectError
     }
   },
   created() {
     if (this.initialData) {
-      this.localProject = { ...this.initialData };
+      this.localProject = { 
+        ...this.initialData
+      } as LocalProjectData;
     }
   },
   watch: {
@@ -124,7 +143,7 @@ export default {
       handler(newVal) {
         if (newVal) {
           // 当有初始数据时，表示是编辑模式
-          this.localProject = { ...newVal };
+          this.localProject = { ...newVal } as LocalProjectData;
         } else {
           // 当没有初始数据时，重置为默认值
           this.resetLocalProject();
@@ -135,13 +154,23 @@ export default {
   },
   methods: {
     resetLocalProject() {
+      const getDefaultStartDate = (): string => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       // 重置为默认值
       this.localProject = {
+        id: undefined,
         name: '',
+        description: '',
         start_date: getDefaultStartDate(),
         end_date: null,
         status: '进行中'
-      };
+      } as LocalProjectData;
     },
     submitProject() {
       // 清除之前的错误
@@ -165,9 +194,15 @@ export default {
       }
 
       if (this.isEditing) {
-        this.$emit('update', { ...this.localProject });
+        this.$emit('update', { ...this.localProject } as Project);
       } else {
-        this.$emit('create', { ...this.localProject });
+        this.$emit('create', { 
+          name: this.localProject.name,
+          description: this.localProject.description || '',
+          start_date: this.localProject.start_date || '',
+          end_date: this.localProject.end_date || null,
+          status: this.localProject.status
+        });
       }
       
       // 提交后重置表单
@@ -176,5 +211,5 @@ export default {
       }
     }
   }
-}
+});
 </script>

@@ -3,7 +3,7 @@
     <label v-if="label" class="block text-sm font-medium text-gray-700 mb-1">{{ label }}</label>
     <input 
       :value="modelValue"
-      @input="$emit('update:modelValue', $event.target.value)"
+      @input="(e: Event) => $emit('update:modelValue', (e.target as HTMLInputElement).value)"
       type="date" 
       :class="['input-field w-full', inputClass]"
       :disabled="disabled"
@@ -11,29 +11,31 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'DatePicker',
   props: {
     modelValue: {
-      type: String,
+      type: String as () => string,
       default: ''
     },
     label: {
-      type: String,
+      type: String as () => string,
       default: ''
     },
     disabled: {
-      type: Boolean,
+      type: Boolean as () => boolean,
       default: false
     },
     inputClass: {
-      type: String,
+      type: String as () => string,
       default: ''
     }
   },
   emits: ['update:modelValue']
-};
+});
 </script>
 
 <style scoped>

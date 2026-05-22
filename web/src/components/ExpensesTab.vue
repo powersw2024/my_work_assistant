@@ -22,11 +22,13 @@
   </div>
 </template>
 
-<script>
-import ExpenseList from './ExpenseList.vue';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import type { Expense } from '../utils/tauriApi';
 import NewExpenseModal from './NewExpenseModal.vue';
+import ExpenseList from './ExpenseList.vue';
 
-export default {
+export default defineComponent({
   name: 'ExpensesTab',
   components: {
     ExpenseList,
@@ -38,11 +40,11 @@ export default {
       required: true
     },
     expenses: {
-      type: Array,
+      type: Array as () => Expense[],
       default: () => []
     },
     categories: {
-      type: Object,
+      type: Object as () => { mainCategories: string[]; categoriesByParent: Record<string, string[]> },
       default: () => ({ mainCategories: [], categoriesByParent: {} })
     }
   },
@@ -67,5 +69,5 @@ export default {
       this.$emit('delete-expense', id);
     }
   }
-};
+})
 </script>

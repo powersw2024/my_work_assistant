@@ -235,8 +235,10 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { expenseApi } from '../utils/tauriApi';
+import { defineComponent } from 'vue';
+export default defineComponent({
   name: 'NewExpenseModal',
   props: {
     projectId: {
@@ -364,22 +366,18 @@ export default {
   methods: {
     async loadVoucherTypes() {
       try {
-        const response = await fetch('/api/categories/voucher-types');
-        if (response.ok) {
-          this.voucherTypes = await response.json();
-        } else {
-          console.error('加载凭证类型失败:', response.statusText);
-        }
+        this.voucherTypes = await expenseApi.getVoucherTypes();
       } catch (error) {
-        console.error('加载凭证类型时出错:', error);
+        console.error('加载凭证类型失败:', error);
+        this.voucherTypes = [];
       }
     },
     onMainCategoryChange() {
       this.expenseData.sub_category_id = ''; // 重置子类别
     },
-    onFileChange(event, voucherTypeId) {
+    onFileChange(event: Event, voucherTypeId: string) {
       // 获取文件列表
-      const files = Array.from(event.target.files);
+      const files = Array.from((event.target as HTMLInputElement).files || []);
 
       // 初始化对应凭证类型的文件数组
       if (!this.selectedFiles[voucherTypeId]) {
@@ -387,7 +385,7 @@ export default {
       }
 
       // 添加新文件，避免重复
-      files.forEach(file => {
+      files.forEach((file: File) => {
         const existingIndex = this.selectedFiles[voucherTypeId].findIndex(f => f.name === file.name);
         if (existingIndex === -1) {
           this.selectedFiles[voucherTypeId].push(file);
@@ -397,7 +395,7 @@ export default {
       });
 
       // 清空input，以便可以重复选择相同文件
-      event.target.value = '';
+      (event.target as HTMLInputElement).value = '';
     },
     getVoucherTypeName(voucherTypeId) {
       const voucherType = this.voucherTypes.find(vt => vt.id == voucherTypeId);
@@ -551,5 +549,5 @@ export default {
       this.saveExpense();
     }
   }
-};
+});
 </script>

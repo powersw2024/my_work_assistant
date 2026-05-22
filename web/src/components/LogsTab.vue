@@ -27,21 +27,17 @@
 
     <!-- 日志列表列 -->
     <div class="w-3/4 pl-6">
-      <div class="flex justify-between items-center mb-6">
+      <div class="mb-6">
         <h2 class="text-xl font-bold text-gray-800">工作日志</h2>
-        <button @click="showNewLogModal = true"
-          class="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          添加日志
-        </button>
       </div>
 
-      <LogList :logs="logs" :projectId="projectId" :personnel="settings.personnel || []" @edit-log="editLog"
-        @delete-log="handleDeleteLog" />
+      <LogList 
+        :logs="logs" 
+        :projectId="projectId" 
+        :personnel="settings?.personnel || []" 
+        @edit-log="editLog"
+        @delete-log="handleDeleteLog" 
+      />
     </div>
     
     <!-- 新增/编辑日志模态框 -->
@@ -50,19 +46,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import LogList from './LogList.vue';
 import NewLogModal from './NewLogModal.vue';
-import {
-  getWeatherEmoji,
-  formatDate,
-  formatDateShort,
-  hasLogOnDate,
-  jumpToLogOnDate,
-  handleDateDoubleClick
-} from '../utils/projectDetailUtils';
+import { formatDateShort, hasLogOnDate, jumpToLogOnDate, handleDateDoubleClick } from '../utils/projectDetailUtils';
+import { reportApi } from '../utils/tauriApi';
+import type { ProjectStatistics, WorkLog, Project } from '../utils/tauriApi';
 
-export default {
+export default defineComponent({
   name: 'LogsTab',
   components: {
     LogList,
@@ -78,7 +70,7 @@ export default {
       default: () => null
     },
     logs: {
-      type: Array,
+      type: Array as () => WorkLog[],
       default: () => []
     },
     settings: {
@@ -90,76 +82,84 @@ export default {
   data() {
     return {
       showNewLogModal: false,
-      editingLog: null
+      editingLog: null as any,
+      statistics: {
+        project_days: 0,
+        meal_allowance: 0
+      } as ProjectStatistics
     };
   },
   computed: {
+    // 生成时间轴上的日期列表（基于项目实际日期范围）
     projectDays() {
-      if (!this.project || !this.project.start_date) return [];
+      if (!this.project?.start_date) return [];
 
       const startDate = new Date(this.project.start_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      let endDate;
-
-      if (this.project.end_date) {
-        endDate = new Date(this.project.end_date);
-        endDate.setHours(0, 0, 0, 0);
-        endDate = endDate < today ? endDate : today;
-      } else {
-        endDate = today;
-      }
-
-      startDate.setHours(0, 0, 0, 0);
-
-      if (endDate < startDate) {
-        return [];
-      }
-
+      const endDate = this.project.end_date ? new Date(this.project.end_date) : null;
+      
+      let currentDate = new Date(startDate);
+      currentDate.setHours(0, 0, 0, 0);
+      
       const days = [];
-      const currentDate = new Date(startDate);
-
-      while (currentDate <= endDate) {
+      
+      while (endDate === null || currentDate <= endDate) {
         const dateStr = currentDate.toISOString().split('T')[0];
         const dayOfWeek = currentDate.toLocaleDateString('zh-CN', { weekday: 'short' });
-
-        days.push({
-          date: dateStr,
-          dayOfWeek: dayOfWeek
-        });
-
+        days.push({ date: dateStr, dayOfWeek });
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
       return days.reverse();
     }
   },
+  async mounted() {
+    try {
+      const stats = await reportApi.getProjectStatistics(this.projectId);
+      this.statistics = stats;
+    } catch (error) {
+      console.error('Failed to fetch project statistics:', error);
+    }
+  },
   methods: {
-    getWeatherEmoji,
-    formatDate,
+    async loadStatistics() {
+      try {
+        const stats = await reportApi.getProjectStatistics(this.projectId);
+        this.statistics = stats;
+      } catch (error) {
+        console.error('Failed to fetch project statistics:', error);
+      }
+    },
     formatDateShort,
     hasLogOnDate,
     jumpToLogOnDate,
 
-    handleDateDoubleClick(event, date) {
+    handleDateDoubleClick(event: MouseEvent, date: string) {
       handleDateDoubleClick(event, date, this.editLog, this.project, this.logs);
     },
 
-    editLog(log) {
+    editLog(log: any) {
       this.editingLog = { ...log };
       this.showNewLogModal = true;
     },
 
-    async handleSaveLog(logData) {
+    async handleSaveLog(logData: any) {
       this.$emit('save-log', logData);
     },
 
-    handleDeleteLog(id) {
+    handleDeleteLog(id: number) {
       this.$emit('delete-log', id);
     }
+  },
+  watch: {
+    'project.id': {
+      handler(newVal: number | undefined) {
+        if (newVal) {
+          this.loadStatistics();
+        }
+      }
+    }
   }
-};
+});
 </script>
 
 <style scoped>

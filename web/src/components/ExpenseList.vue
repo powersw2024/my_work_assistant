@@ -25,7 +25,7 @@
             <div class="text-sm text-gray-900">{{ expense.sub_category }}</div>
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm font-medium text-gray-900">¥{{ parseFloat(expense.amount).toFixed(2) }}</div>
+            <div class="text-sm font-medium text-gray-900">¥{{ (typeof expense.amount === 'number' ? expense.amount : parseFloat(expense.amount)).toFixed(2) }}</div>
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
             <div class="text-sm text-gray-900">
@@ -49,15 +49,16 @@
               </div>
             </div>
             <div v-else-if="expense.file_paths">
-              <div v-for="(filePath, index) in parseFilePaths(expense.file_paths)" :key="index" class="mb-1 last:mb-0 flex items-center">
+              <div v-for="(filePath, idx) in parseFilePaths(expense.file_paths)" :key="idx" class="mb-1 last:mb-0 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <a :href="generateFileUrl(filePath)" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
-                  文件{{ index + 1 }}
+                  文件{{ parseInt(String(idx)) + 1 }}
                 </a>
               </div>
             </div>
+
             <div v-else class="text-gray-400">
               无文件
             </div>
@@ -92,8 +93,11 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+import type { Expense } from '../utils/tauriApi';
+
+export default defineComponent({
   name: 'ExpenseList',
   props: {
     projectId: {
@@ -101,7 +105,7 @@ export default {
       required: true
     },
     expenses: {
-      type: Array,
+      type: Array as () => Expense[],
       default: () => []
     }
   },
@@ -150,5 +154,5 @@ export default {
       }
     }
   }
-};
+});
 </script>

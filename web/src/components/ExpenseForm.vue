@@ -237,40 +237,38 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+import type { Expense } from '../utils/tauriApi';
+
+export default defineComponent({
   name: 'ExpenseForm',
   props: {
     expense: {
-      type: Object,
+      type: Object as () => Partial<Expense>,
       required: true
     },
     mainCategories: {
-      type: Array,
+      type: Array as () => string[],
       default: () => []
     },
     subCategoriesByMain: {
-      type: Object,
-      default: () => {}
+      type: Object as () => Record<string, string[]>,
+      default: () => ({})
     },
     voucherTypes: {
-      type: Array,
+      type: Array as () => string[],
       default: () => ['发票', '收据', '白条', '付款记录']
     }
   },
   emits: ['submit-expense'],
   data() {
     return {
-      localExpense: { 
-        ...this.expense,
-        main_category: '',
-        sub_category: '',
-        description: ''
-      },
-      subCategories: [],
-      requiredFileType: '发票',
-      selectedFiles: [], // 存储已选择的文件
-      selectedVoucherTypes: [] // 存储选中的凭证类型
+      localExpense: {} as Partial<Expense>,
+      subCategories: [] as string[],
+      requiredFileType: '发票' as string,
+      selectedFiles: [] as Array<{ file: File; type: string }>, // 存储已选择的文件
+      selectedVoucherTypes: [] as string[] // 存储选中的凭证类型
     }
   },
   computed: {
@@ -308,10 +306,10 @@ export default {
       }
     },
     
-    onFileChange(event, fileType) {
-      const files = Array.from(event.target.files);
+    onFileChange(event: Event, fileType: string) {
+      const files = Array.from((event.target as HTMLInputElement).files || []);
       
-      files.forEach(file => {
+      files.forEach((file: File) => {
         // 添加文件到列表前检查是否已经存在相同文件
         const fileNameExists = this.selectedFiles.some(f => f.file.name === file.name);
         if (!fileNameExists) {
@@ -323,7 +321,7 @@ export default {
       });
       
       // 清空input，以便可以重复选择相同文件
-      event.target.value = '';
+      (event.target as HTMLInputElement).value = '';
     },
     
     removeFile(index) {

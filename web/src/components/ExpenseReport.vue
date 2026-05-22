@@ -6,15 +6,15 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div class="bg-white p-6 rounded-xl shadow border-l-4 border-blue-500">
         <h3 class="text-lg font-semibold text-gray-700 mb-2">总费用</h3>
-        <p class="text-2xl font-bold text-gray-900">¥{{ totalExpenses | currency }}</p>
+        <p class="text-2xl font-bold text-gray-900">¥{{ totalExpensesFormatted }}</p>
       </div>
       <div class="bg-white p-6 rounded-xl shadow border-l-4 border-green-500">
         <h3 class="text-lg font-semibold text-gray-700 mb-2">有发票金额</h3>
-        <p class="text-2xl font-bold text-gray-900">¥{{ totalWithInvoice | currency }}</p>
+        <p class="text-2xl font-bold text-gray-900">¥{{ totalWithInvoiceFormatted }}</p>
       </div>
       <div class="bg-white p-6 rounded-xl shadow border-l-4 border-yellow-500">
         <h3 class="text-lg font-semibold text-gray-700 mb-2">零星材料费</h3>
-        <p class="text-2xl font-bold text-gray-900">¥{{ miscellaneousTotal | currency }}</p>
+        <p class="text-2xl font-bold text-gray-900">¥{{ miscellaneousTotalFormatted }}</p>
       </div>
     </div>
 
@@ -37,19 +37,22 @@
       </div>
     </div>
 
-    <!-- 自动添加伙食补贴说明 -->
+    <!-- 伙食补贴说明 -->
     <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-      <h4 class="font-medium text-blue-800 mb-2">自动计算说明</h4>
-      <p class="text-blue-700 text-sm">根据项目开始日至今日，系统自动计算了伙食补贴（每日90元），该费用不计入费用报销表格中。</p>
+      <h4 class="font-medium text-blue-800 mb-2">伙食补贴统计</h4>
+      <p class="text-blue-700 text-sm">项目天数：{{ statistics.project_days }} 天，伙食补贴：¥{{ mealAllowanceFormatted }}（每日90元）</p>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 // 仅在需要时动态导入 Chart.js
-let Chart = null;
+let Chart: any = null;
+import { reportApi } from '../utils/tauriApi';
+import type { ExpenseSummary, ProjectStatistics, CategoryExpense } from '../utils/tauriApi';
 
-export default {
+export default defineComponent({
   name: 'ExpenseReport',
   props: {
     expenses: {
@@ -67,147 +70,87 @@ export default {
   },
   data() {
     return {
-      categoryChart: null,
-      invoiceChart: null
+      summary: {
+        total_expenses: 0,
+        total_with_invoice: 0,
+        miscellaneous_total: 0,
+        category_breakdown: [],
+        invoice_category_breakdown: []
+      } as ExpenseSummary,
+      statistics: {
+        project_days: 0,
+        meal_allowance: 0
+      } as ProjectStatistics,
+      categoryChart: null as any,
+      invoiceChart: null as any
     };
   },
   computed: {
-    // 计算项目天数
-    projectDays() {
-      if (!this.project || !this.project.start_date) return 0;
-      
-      const startDate = new Date(this.project.start_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      let endDate = today;
-      if (this.project.end_date) {
-        const projectEnd = new Date(this.project.end_date);
-        projectEnd.setHours(0, 0, 0, 0);
-        if (projectEnd < today) {
-          endDate = projectEnd;
-        }
-      }
-      
-      const timeDiff = endDate.getTime() - startDate.getTime();
-      return Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // 包含开始当天
+    totalExpensesFormatted(): string {
+      return this.formatCurrency(this.summary.total_expenses);
     },
-    
-    // 伙食补贴总额
-    mealAllowance() {
-      return this.projectDays * 90;
+    totalWithInvoiceFormatted(): string {
+      return this.formatCurrency(this.summary.total_with_invoice);
     },
-    
-    // 按大类分组的费用统计
-    categorizedExpenses() {
-      const result = {};
-      
-      // 过滤掉伙食补贴类型的费用
-      const filteredExpenses = this.expenses.filter(e => e.main_category && e.main_category.name !== '伙食补贴');
-      
-      filteredExpenses.forEach(expense => {
-        const mainCatName = expense.main_category ? expense.main_category.name : '未分类';
-        if (!result[mainCatName]) {
-          result[mainCatName] = 0;
-        }
-        result[mainCatName] += parseFloat(expense.amount) || 0;
-      });
-      
-      return result;
+    miscellaneousTotalFormatted(): string {
+      return this.formatCurrency(this.summary.miscellaneous_total);
     },
-    
-    // 按大类分组的有发票费用统计
-    categorizedExpensesWithInvoice() {
-      const result = {};
-      
-      // 过滤掉伙食补贴类型的费用
-      const filteredExpenses = this.expenses.filter(e => {
-        return e.main_category && 
-               e.main_category.name !== '伙食补贴' && 
-               e.voucher_types && 
-               e.voucher_types.length > 0;
-      });
-      
-      filteredExpenses.forEach(expense => {
-        const mainCatName = expense.main_category ? expense.main_category.name : '未分类';
-        if (!result[mainCatName]) {
-          result[mainCatName] = 0;
-        }
-        result[mainCatName] += parseFloat(expense.amount) || 0;
-      });
-      
-      // 计算零星材料费（没有发票的费用）
-      const totalWithoutInvoice = this.getTotalWithoutInvoice();
-      if (totalWithoutInvoice > 0) {
-        result['零星材料费'] = totalWithoutInvoice;
-      }
-      
-      return result;
-    },
-    
-    // 总费用
-    totalExpenses() {
-      return Object.values(this.categorizedExpenses).reduce((sum, val) => sum + val, 0);
-    },
-    
-    // 有发票的总费用
-    totalWithInvoice() {
-      const result = {};
-      const filteredExpenses = this.expenses.filter(e => {
-        return e.main_category && 
-               e.main_category.name !== '伙食补贴' && 
-               e.voucher_types && 
-               e.voucher_types.length > 0;
-      });
-      
-      filteredExpenses.forEach(expense => {
-        const mainCatName = expense.main_category ? expense.main_category.name : '未分类';
-        if (!result[mainCatName]) {
-          result[mainCatName] = 0;
-        }
-        result[mainCatName] += parseFloat(expense.amount) || 0;
-      });
-      
-      return Object.values(result).reduce((sum, val) => sum + val, 0);
-    },
-    
-    // 零星材料费总额
-    miscellaneousTotal() {
-      return this.getTotalWithoutInvoice();
+    mealAllowanceFormatted(): string {
+      return this.formatCurrency(this.statistics.meal_allowance);
     }
   },
   async mounted() {
-    // 动态导入 Chart.js
-    try {
-      const ChartModule = await import('chart.js/auto');
-      Chart = ChartModule.default;
-    } catch (error) {
-      console.error('Failed to load Chart.js:', error);
-      return;
-    }
-    
+    await this.loadStatistics();
     this.renderCharts();
   },
   watch: {
-    categorizedExpenses: {
-      handler() {
-        this.$nextTick(() => {
-          this.renderCharts();
-        });
-      },
-      deep: true
-    },
-    categorizedExpensesWithInvoice: {
-      handler() {
-        this.$nextTick(() => {
-          this.renderCharts();
-        });
-      },
-      deep: true
+    project: {
+      handler(newVal: any, oldVal: any) {
+        if (newVal && oldVal?.id !== newVal?.id) {
+          this.loadStatistics();
+        }
+      }
     }
   },
   methods: {
+    formatCurrency(value: number): string {
+      if (typeof value !== 'number') {
+        value = parseFloat(value) || 0;
+      }
+      return value.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    },
+    // 加载统计数据
+    async loadStatistics() {
+      if (!this.project?.id) return;
+      
+      try {
+        const [summary, stats] = await Promise.all([
+          reportApi.getExpenseSummary(this.project.id),
+          reportApi.getProjectStatistics(this.project.id)
+        ]);
+        
+        this.summary = summary;
+        this.statistics = stats;
+      } catch (error) {
+        console.error('加载统计数据失败:', error);
+      }
+    },
+    
     renderCharts() {
+      // 动态导入 Chart.js
+      if (!Chart) {
+        import('chart.js/auto').then((ChartModule) => {
+          Chart = ChartModule.default;
+          this.doRenderCharts();
+        });
+      } else {
+        this.doRenderCharts();
+      }
+    },
+    doRenderCharts() {
       // 销毁之前的图表实例
       if (this.categoryChart) {
         this.categoryChart.destroy();
@@ -219,9 +162,9 @@ export default {
       
       // 渲染费用大类统计图表
       const categoryCtx = this.$refs.categoryChartCanvas.getContext('2d');
-      const categoryData = Object.entries(this.categorizedExpenses);
-      const categoryLabels = categoryData.map(item => item[0]);
-      const categoryValues = categoryData.map(item => item[1]);
+      const categoryData = this.summary.category_breakdown || [];
+      const categoryLabels = categoryData.map((item: CategoryExpense) => item.category_name);
+      const categoryValues = categoryData.map((item: CategoryExpense) => item.amount);
       
       this.categoryChart = new Chart(categoryCtx, {
         type: 'bar',
@@ -242,7 +185,7 @@ export default {
             y: {
               beginAtZero: true,
               ticks: {
-                callback: function(value) {
+                callback: function(value: number) {
                   return '¥' + value.toLocaleString();
                 }
               }
@@ -253,9 +196,9 @@ export default {
       
       // 渲染有发票费用大类统计图表
       const invoiceCtx = this.$refs.invoiceChartCanvas.getContext('2d');
-      const invoiceData = Object.entries(this.categorizedExpensesWithInvoice);
-      const invoiceLabels = invoiceData.map(item => item[0]);
-      const invoiceValues = invoiceData.map(item => item[1]);
+      const invoiceData = this.summary.invoice_category_breakdown || [];
+      const invoiceLabels = invoiceData.map((item: CategoryExpense) => item.category_name);
+      const invoiceValues = invoiceData.map((item: CategoryExpense) => item.amount);
       
       this.invoiceChart = new Chart(invoiceCtx, {
         type: 'bar',
@@ -276,7 +219,7 @@ export default {
             y: {
               beginAtZero: true,
               ticks: {
-                callback: function(value) {
+                callback: function(value: number) {
                   return '¥' + value.toLocaleString();
                 }
               }
@@ -284,34 +227,9 @@ export default {
           }
         }
       });
-    },
-    
-    // 获取没有发票的费用总额（归为零星材料费）
-    getTotalWithoutInvoice() {
-      const totalWithInvoice = this.expenses
-        .filter(e => e.main_category && e.main_category.name !== '伙食补贴')
-        .filter(e => e.voucher_types && e.voucher_types.length > 0)
-        .reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
-      
-      const totalAll = this.expenses
-        .filter(e => e.main_category && e.main_category.name !== '伙食补贴')
-        .reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
-      
-      return totalAll - totalWithInvoice;
-    }
-  },
-  filters: {
-    currency(value) {
-      if (typeof value !== 'number') {
-        value = parseFloat(value) || 0;
-      }
-      return value.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
     }
   }
-};
+});
 </script>
 
 <style scoped>

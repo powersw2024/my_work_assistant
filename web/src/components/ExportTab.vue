@@ -93,8 +93,9 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+export default defineComponent({
   name: 'ExportTab',
   props: {
     projectId: {
@@ -164,5 +165,5 @@ export default {
       return { location, hint };
     }
   }
-};
+})
 </script>
