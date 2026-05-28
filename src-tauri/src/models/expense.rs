@@ -87,6 +87,8 @@ pub struct ExpenseFile {
     pub expense_record_id: i64,
     pub file_path: String,
     pub file_name: String,
+    pub voucher_type_id: Option<i64>,
+    pub voucher_type_name: Option<String>,
     pub file_size: Option<i64>,
     pub created_at: String,
 }

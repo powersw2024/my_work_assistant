@@ -1,119 +1,94 @@
 <template>
-  <div class="mb-8">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+  <div class="glass-panel p-5 sm:p-6">
+    <div class="mb-6 flex items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">项目管理</h2>
-        <p class="text-base text-gray-500">管理您的项目、日志和费用</p>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <button @click="$emit('open-settings')" class="btn btn-secondary flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          系统配置
-        </button>
-        <button @click="$emit('new-project')" class="btn btn-primary flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          新建项目
-        </button>
+        <h2 class="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">项目总览</h2>
+        <p class="mt-1 text-sm text-slate-500">支持双击进入项目详情，保留编辑、删除和台账查看能力。</p>
       </div>
     </div>
 
-    <!-- 项目卡片列表 -->
-    <div v-if="projects.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      <div v-for="project in projects" :key="project.id"
-        class="card group cursor-pointer overflow-hidden bg-white hover:bg-surface-50"
+    <div v-if="projects.length > 0" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <article v-for="project in projects" :key="project.id"
+        class="group relative overflow-hidden rounded-3xl border border-white/70 bg-white/90 p-6 shadow-soft ring-1 ring-slate-950/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
         @dblclick="goToProjectDetail(project.id)" @click="selectProject(project.id)">
-        <div class="p-6 flex-1 flex flex-col">
-          <div class="flex justify-between items-start mb-4">
-            <div class="flex items-center space-x-3 overflow-hidden">
+        <div class="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-primary-100/90 via-white/0 to-emerald-100/70">
+        </div>
+        <div class="relative z-10 flex h-full flex-col">
+          <div class="mb-5 flex items-start justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
               <div
-                class="flex-shrink-0 w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-lg">
+                class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-lg font-semibold text-white shadow-sm">
                 {{ project.name.charAt(0).toUpperCase() }}
               </div>
-              <h3 class="text-lg font-bold text-gray-900 truncate" :title="project.name">{{ project.name }}</h3>
+              <div class="min-w-0">
+                <h3 class="truncate text-lg font-semibold text-slate-950" :title="project.name">{{ project.name }}</h3>
+                <p class="mt-1 max-h-12 overflow-hidden text-sm leading-6 text-slate-500">
+                  {{ project.description || '暂无项目描述，双击进入详情页查看日志、费用与导出数据。' }}
+                </p>
+              </div>
             </div>
 
-            <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div class="flex space-x-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               <button @click.stop="editProject(project.id)"
-                class="text-gray-400 hover:text-primary-600 p-1.5 rounded-lg hover:bg-primary-50 transition-colors"
+                class="rounded-xl p-2 text-slate-400 transition-colors hover:bg-primary-50 hover:text-primary-600"
                 title="编辑项目">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </button>
               <button @click.stop="deleteProject(project.id)"
-                class="text-gray-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                class="rounded-xl p-2 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
                 title="删除项目">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
             </div>
           </div>
 
-          <div class="space-y-3 mt-auto">
-            <div class="flex items-center text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span class="text-gray-500 w-16">开始:</span>
-              <span class="text-gray-900 font-medium">{{ formatDate(project.start_date) }}</span>
+          <div class="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+            <div class="rounded-2xl border border-surface-200 bg-surface-50/90 p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">开始日期</p>
+              <p class="mt-2 font-medium text-slate-900">{{ formatDate(project.start_date) }}</p>
             </div>
-            <div class="flex items-center text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="text-gray-500 w-16">结束:</span>
-              <span class="text-gray-900 font-medium">{{ project.end_date ? formatDate(project.end_date) : '-' }}</span>
+            <div class="rounded-2xl border border-surface-200 bg-surface-50/90 p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">结束日期</p>
+              <p class="mt-2 font-medium text-slate-900">{{ project.end_date ? formatDate(project.end_date) : '-' }}</p>
             </div>
           </div>
-        </div>
 
-        <!-- 项目统计摘要 -->
-        <div class="px-6 py-4 bg-surface-50 border-t border-surface-200 flex justify-between items-center text-sm">
-          <span :class="projectStatusClass(project.id)" class="tag">
-            {{ projectStatus(project.id) }}
-          </span>
-          <div class="flex space-x-4 text-gray-500">
-            <div class="flex items-center" title="日志数量">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span class="font-medium">{{ getProjectLogCount(project.id) }}</span>
-            </div>
-            <div class="flex items-center" title="费用数量">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 text-gray-400" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="font-medium">{{ getProjectExpenseCount(project.id) }}</span>
+          <div class="mt-5 flex items-center justify-between border-t border-surface-200/80 pt-4 text-sm">
+            <span :class="projectStatusClass(project.id)" class="tag">
+              {{ projectStatus(project.id) }}
+            </span>
+            <div class="flex items-center gap-4 text-slate-500">
+              <span class="inline-flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                {{ getProjectLogCount(project.id) }}
+              </span>
+              <span class="inline-flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ getProjectExpenseCount(project.id) }}
+              </span>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </div>
 
-    <!-- 空状态 -->
-    <div v-else class="text-center py-20 bg-white rounded-3xl border border-dashed border-surface-300">
+    <div v-else class="text-center py-20 bg-white/95 rounded-3xl border border-dashed border-surface-300 shadow-soft">
       <div class="mx-auto w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mb-6 text-primary-500">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -180,8 +155,7 @@ export default defineComponent({
     },
     goToProjectDetail(projectId: number) {
       // 双击时跳转到项目详情页
-      console.log('Navigating to project:', projectId);
-      this.$router.push(`/project/${projectId}`).catch(err => {
+      this.$router.push(`/project/${projectId}`).catch((err: unknown) => {
         console.error('Navigation error:', err);
       });
     },
@@ -198,19 +172,19 @@ export default defineComponent({
       }
     },
     projectStatus(projectId: number | string): string {
-      // 由于无法获取日志数据，暂时基于项目是否存在判断状态
-      // 这里可以接入实际的逻辑来判断状态
-      return '未开始';
+      const project = this.projects.find((item: Project) => item.id === projectId);
+      return project?.status || '进行中';
     },
     projectStatusClass(projectId: number | string): string {
       const status = this.projectStatus(projectId);
-      return status === '进行中' ? 'tag-green' : 'tag-yellow';
+      if (status === '已结束') return 'tag-yellow';
+      return 'tag-green';
     },
-    getProjectLogCount(projectId: number | string): number {
+    getProjectLogCount(_projectId: number | string): number {
       // TODO: 从 API 获取实际的日志数量
       return 0;
     },
-    getProjectExpenseCount(projectId: number | string): number {
+    getProjectExpenseCount(_projectId: number | string): number {
       // TODO: 从 API 获取实际的费用数量
       return 0;
     }

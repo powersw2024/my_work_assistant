@@ -37,18 +37,25 @@
             <div class="truncate text-gray-600" :title="expense.description">{{ expense.description || '-' }}</div>
           </td>
           <td>
-            <div v-if="expense.files && expense.files.length > 0" class="flex flex-col gap-1">
-              <div v-for="(file, index) in expense.files" :key="index" class="flex items-center group/link">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4 mr-1 text-primary-400 group-hover/link:text-primary-600" fill="none"
-                  viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-                <a :href="generateFileUrl(file)" target="_blank"
-                  class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium">
-                  附件 {{ index + 1 }}
-                </a>
+            <div v-if="expense.files && expense.files.length > 0" class="flex flex-col gap-2">
+              <div v-for="(group, voucherTypeName) in groupFilesByVoucherType(expense.files)"
+                :key="String(voucherTypeName)" class="rounded-xl border border-surface-200 bg-surface-50/80 p-3">
+                <div class="mb-2 flex items-center gap-2">
+                  <span class="tag tag-blue">{{ voucherTypeName }}</span>
+                  <span class="text-xs text-slate-400">{{ group.length }} 个文件</span>
+                </div>
+                <div class="space-y-1.5">
+                  <div v-for="file in group" :key="file.id || file.file_path"
+                    class="flex items-center gap-2 text-sm text-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary-500" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="truncate font-medium text-slate-700" :title="file.file_name">{{ file.file_name
+                    }}</span>
+                  </div>
+                </div>
               </div>
             </div>
             <div v-else-if="expense.file_paths" class="flex flex-col gap-1">
@@ -60,10 +67,9 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>
-                <a :href="generateFileUrl(filePath)" target="_blank"
-                  class="text-primary-600 hover:text-primary-700 hover:underline text-sm font-medium">
-                  附件 {{ parseInt(String(idx)) + 1 }}
-                </a>
+                <span class="text-sm font-medium text-slate-700">
+                  {{ typeof filePath === 'string' ? filePath.split(/[\\/]/).pop() : `附件 ${parseInt(String(idx)) + 1}` }}
+                </span>
               </div>
             </div>
             <div v-else class="text-gray-400 text-sm italic">无附件</div>
@@ -110,7 +116,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import type { Expense } from '../utils/tauriApi';
+import type { Expense, ExpenseFile } from '../utils/tauriApi';
 
 export default defineComponent({
   name: 'ExpenseList',
@@ -126,12 +132,12 @@ export default defineComponent({
   },
   emits: ['delete-expense', 'edit-expense'],
   methods: {
-    formatDate(dateString) {
+    formatDate(dateString?: string) {
       if (!dateString) return '';
       const date = new Date(dateString);
       return date.toLocaleDateString();
     },
-    voucherTypeClass(voucherType) {
+    voucherTypeClass(voucherType?: string | null) {
       if (!voucherType) return 'tag-gray';
       const firstType = voucherType.split(',')[0].trim();
       switch (firstType) {
@@ -147,25 +153,25 @@ export default defineComponent({
           return 'tag-gray';
       }
     },
-    parseFilePaths(filePaths) {
+    groupFilesByVoucherType(files: ExpenseFile[]) {
+      return files.reduce((groups: Record<string, ExpenseFile[]>, file) => {
+        const key = file.voucher_type_name || '未分类凭证';
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(file);
+        return groups;
+      }, {});
+    },
+    parseFilePaths(filePaths: string[] | string) {
       try {
+        if (Array.isArray(filePaths)) {
+          return filePaths;
+        }
         return JSON.parse(filePaths) || [];
       } catch (e) {
         console.error('解析文件路径失败:', e);
-        return [];
-      }
-    },
-    generateFileUrl(filePath) {
-      // 从完整路径中提取项目名称和文件名
-      const pathParts = filePath.split('/');
-      if (pathParts.length >= 2) {
-        const projectName = encodeURIComponent(pathParts[pathParts.length - 2] || 'default');
-        const fileName = encodeURIComponent(pathParts[pathParts.length - 1]);
-        // 构造API路径，使用URL编码处理特殊字符
-        return `/api/uploads/${projectName}/${fileName}`;
-      } else {
-        const fileName = filePath.split('/').pop();
-        return `/api/uploads/default/${encodeURIComponent(fileName)}`;
+        return typeof filePaths === 'string' ? [filePaths] : [];
       }
     }
   }

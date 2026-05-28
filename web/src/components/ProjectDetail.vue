@@ -1,119 +1,134 @@
 <template>
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
-    <div v-if="loading" class="flex justify-center items-center h-64">
-      <div class="flex flex-col items-center">
-        <svg class="animate-spin h-8 w-8 text-primary-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-          viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-          </path>
-        </svg>
-        <p class="text-lg text-gray-500 font-medium">加载中...</p>
+  <div class="app-shell">
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div v-if="loading" class="flex justify-center items-center h-64">
+        <div class="flex flex-col items-center">
+          <svg class="animate-spin h-8 w-8 text-primary-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          <p class="text-lg text-gray-500 font-medium">加载中...</p>
+        </div>
       </div>
-    </div>
 
-    <div v-else-if="loadError" class="flex justify-center items-center h-64">
-      <div class="text-center bg-rose-50 p-8 rounded-2xl border border-rose-100 max-w-md">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-rose-500 mx-auto mb-4" fill="none"
-          viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <p class="text-lg text-rose-700 mb-6 font-medium">{{ loadError }}</p>
-        <button @click="goBack" class="btn btn-primary w-full">返回项目列表</button>
+      <div v-else-if="loadError" class="flex justify-center items-center h-64">
+        <div class="text-center bg-rose-50 p-8 rounded-2xl border border-rose-100 max-w-md">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-rose-500 mx-auto mb-4" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p class="text-lg text-rose-700 mb-6 font-medium">{{ loadError }}</p>
+          <button @click="goBack" class="btn btn-primary w-full">返回项目列表</button>
+        </div>
       </div>
-    </div>
 
-    <div v-else-if="!project" class="flex justify-center items-center h-64">
-      <div class="text-center bg-surface-50 p-8 rounded-2xl border border-surface-200 max-w-md">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none"
-          viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <p class="text-lg text-gray-500 mb-6 font-medium">未找到该项目</p>
-        <button @click="goBack" class="btn btn-primary w-full">返回项目列表</button>
+      <div v-else-if="!project" class="flex justify-center items-center h-64">
+        <div class="text-center bg-surface-50 p-8 rounded-2xl border border-surface-200 max-w-md">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+          <p class="text-lg text-gray-500 mb-6 font-medium">未找到该项目</p>
+          <button @click="goBack" class="btn btn-primary w-full">返回项目列表</button>
+        </div>
       </div>
-    </div>
 
-    <div v-else class="flex flex-col space-y-6">
-      <!-- 顶部信息栏 -->
-      <div
-        class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-soft border border-surface-200">
-        <div class="flex items-center space-x-4">
-          <button @click="goBack"
-            class="p-2 rounded-xl text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-            title="返回列表">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">{{ project.name }}</h1>
-            <p v-if="project.description" class="text-sm text-gray-500 mt-1">{{ project.description }}</p>
+      <div v-else class="flex flex-col space-y-6">
+        <!-- 顶部信息栏 -->
+        <div class="hero-panel flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div class="flex items-center space-x-4">
+            <button @click="goBack"
+              class="rounded-2xl border border-white/70 bg-white/75 p-3 text-slate-400 shadow-sm transition-colors hover:text-primary-600"
+              title="返回列表">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+            <div>
+              <p class="eyebrow mb-2">Project Detail</p>
+              <h1 class="text-3xl font-semibold tracking-tight text-slate-950">{{ project.name }}</h1>
+              <p v-if="project.description" class="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{{
+                project.description }}</p>
+            </div>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div class="stat-card min-w-[140px]">
+              <p class="stat-label">状态</p>
+              <p class="mt-2 text-base font-semibold text-slate-900">{{ project.status || '进行中' }}</p>
+            </div>
+            <div class="stat-card min-w-[140px]">
+              <p class="stat-label">开始日期</p>
+              <p class="mt-2 text-base font-semibold text-slate-900">{{ project.start_date }}</p>
+            </div>
+            <div class="stat-card min-w-[140px]">
+              <p class="stat-label">结束日期</p>
+              <p class="mt-2 text-base font-semibold text-slate-900">{{ project.end_date || '-' }}</p>
+            </div>
           </div>
         </div>
-        <div class="flex gap-3">
-          <span class="tag-blue">项目详情</span>
+
+        <!-- 分栏导航 -->
+        <div class="glass-panel overflow-hidden p-2">
+          <div class="flex overflow-x-auto hide-scrollbar">
+            <button v-for="tab in tabs" :key="tab.name" @click="activeTab = tab.name" :class="[
+              'relative flex-1 min-w-[120px] rounded-2xl px-4 py-4 text-sm font-medium transition-all duration-200',
+              activeTab === tab.name
+                ? 'bg-white text-primary-700 shadow-soft'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'
+            ]">
+              <div class="flex items-center justify-center space-x-2">
+                <svg v-if="tab.name === 'logs'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <svg v-if="tab.name === 'expenses'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg v-if="tab.name === 'reports'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 19v-6a2 2 0 002-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <svg v-if="tab.name === 'export'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>{{ tab.label }}</span>
+              </div>
+              <div v-if="activeTab === tab.name"
+                class="absolute bottom-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-primary-500/70"></div>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- 分栏导航 -->
-      <div class="bg-white rounded-2xl shadow-soft border border-surface-200 overflow-hidden">
-        <div class="flex overflow-x-auto hide-scrollbar">
-          <button v-for="tab in tabs" :key="tab.name" @click="activeTab = tab.name" :class="[
-            'flex-1 min-w-[120px] py-4 px-4 font-medium text-sm transition-all duration-200 relative',
-            activeTab === tab.name
-              ? 'text-primary-600 bg-primary-50/50'
-              : 'text-gray-500 hover:text-gray-900 hover:bg-surface-50'
-          ]">
-            <div class="flex items-center justify-center space-x-2">
-              <svg v-if="tab.name === 'logs'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <svg v-if="tab.name === 'expenses'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <svg v-if="tab.name === 'reports'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 19v-6a2 2 0 002-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <svg v-if="tab.name === 'export'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span>{{ tab.label }}</span>
-            </div>
-            <div v-if="activeTab === tab.name" class="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500"></div>
-          </button>
+        <!-- 内容区域 -->
+        <div class="glass-panel min-h-[500px] p-6">
+          <!-- 日志标签页 -->
+          <LogsTab v-if="activeTab === 'logs'" :projectId="projectId" :project="project" :logs="logs"
+            :settings="settings" @save-log="handleSaveLog" @delete-log="handleDeleteLog" @edit-log="editLog" />
+
+          <!-- 报销标签页 -->
+          <ExpensesTab v-if="activeTab === 'expenses'" :projectId="projectId" :expenses="expenses"
+            :categories="categories" @save-expense="handleSaveExpense" @delete-expense="handleDeleteExpense"
+            @edit-expense="editExpense" />
+
+          <!-- 报表标签页 -->
+          <ReportsTab v-if="activeTab === 'reports'" :expenses="expenses" :categories="categories" :project="project" />
+
+          <!-- 导出标签页 -->
+          <ExportTab v-if="activeTab === 'export'" :projectId="projectId" @export-expenses="exportExpenses"
+            @export-logs="exportLogs" />
         </div>
-      </div>
-
-      <!-- 内容区域 -->
-      <div class="bg-white rounded-2xl shadow-soft border border-surface-200 p-6 min-h-[500px]">
-        <!-- 日志标签页 -->
-        <LogsTab v-if="activeTab === 'logs'" :projectId="projectId" :project="project" :logs="logs" :settings="settings"
-          @save-log="handleSaveLog" @delete-log="handleDeleteLog" @edit-log="editLog" />
-
-        <!-- 报销标签页 -->
-        <ExpensesTab v-if="activeTab === 'expenses'" :projectId="projectId" :expenses="expenses"
-          :categories="categories" @save-expense="handleSaveExpense" @delete-expense="handleDeleteExpense"
-          @edit-expense="editExpense" />
-
-        <!-- 报表标签页 -->
-        <ReportsTab v-if="activeTab === 'reports'" :expenses="expenses" :categories="categories" :project="project" />
-
-        <!-- 导出标签页 -->
-        <ExportTab v-if="activeTab === 'export'" :projectId="projectId" @export-expenses="exportExpenses"
-          @export-logs="exportLogs" />
       </div>
     </div>
   </div>
@@ -125,8 +140,8 @@ import LogsTab from './LogsTab.vue';
 import ExpensesTab from './ExpensesTab.vue';
 import ReportsTab from './ReportsTab.vue';
 import ExportTab from './ExportTab.vue';
-import { projectApi, workLogApi, expenseApi, settingsApi, reportApi } from '../utils/tauriApi';
-import type { Project, WorkLog, Expense, Settings, Category, ExpenseSummary, ProjectStatistics } from '../utils/tauriApi';
+import { projectApi, workLogApi, expenseApi, settingsApi } from '../utils/tauriApi';
+import type { Project, WorkLog, Expense, Category, ExpenseSummary, ProjectStatistics } from '../utils/tauriApi';
 
 interface Tab {
   name: string;
@@ -189,7 +204,7 @@ export default defineComponent({
       this.loading = true;
       this.loadError = null;
       try {
-        const [project, logs, expenses] = await Promise.all([
+        const [project, logs, rawExpenses] = await Promise.all([
           projectApi.getProject(this.projectId),
           workLogApi.getWorkLogs(this.projectId),
           expenseApi.getExpenses(this.projectId)
@@ -197,6 +212,21 @@ export default defineComponent({
 
         this.project = project;
         this.logs = logs;
+        const expenses = await Promise.all(
+          rawExpenses.map(async (expense: Expense) => {
+            if (!expense.id) {
+              return expense;
+            }
+
+            try {
+              const files = await expenseApi.getExpenseFiles(expense.id);
+              return { ...expense, files };
+            } catch (error) {
+              console.warn(`加载费用 ${expense.id} 的附件失败:`, error);
+              return { ...expense, files: [] };
+            }
+          })
+        );
         this.expenses = expenses;
 
         // 加载费用类别
@@ -278,7 +308,7 @@ export default defineComponent({
       }
     },
 
-    editLog(log: WorkLog) {
+    editLog(_log: WorkLog) {
       // 这个方法现在由LogsTab组件内部处理
     },
 
@@ -309,7 +339,7 @@ export default defineComponent({
       }
     },
 
-    editExpense(expense: Expense) {
+    editExpense(_expense: Expense) {
       // 这个方法现在由ExpensesTab组件内部处理
     },
 
@@ -340,7 +370,7 @@ export default defineComponent({
       immediate: true
     },
     activeTab: {
-      handler(newTab: string) {
+      handler(_newTab: string) {
         // 标签切换时的处理逻辑
       }
     }

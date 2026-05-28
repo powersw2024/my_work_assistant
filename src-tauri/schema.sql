@@ -79,9 +79,11 @@ CREATE TABLE IF NOT EXISTS expense_files (
   expense_record_id INTEGER NOT NULL,
   file_path TEXT NOT NULL,
   file_name TEXT NOT NULL,
+  voucher_type_id INTEGER,
   file_size INTEGER,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (expense_record_id) REFERENCES expense_records (id) ON DELETE CASCADE
+  FOREIGN KEY (expense_record_id) REFERENCES expense_records (id) ON DELETE CASCADE,
+  FOREIGN KEY (voucher_type_id) REFERENCES voucher_types (id)
 );
 
 -- 创建人员表

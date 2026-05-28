@@ -1,20 +1,22 @@
 <template>
-  <div
-    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
-    <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl mx-4 max-h-[90vh] overflow-hidden flex flex-col transform transition-all duration-300 scale-100 opacity-100">
-      <div class="p-6 flex-1 overflow-y-auto">
-        <div class="flex justify-between items-center mb-6 pb-4 border-b border-surface-100">
-          <h2 class="text-2xl font-extrabold text-gray-900">{{ expenseData.id ? '编辑费用' : '新建费用' }}</h2>
-          <button @click="$emit('close')"
-            class="text-gray-400 hover:text-rose-500 hover:bg-rose-50 p-2 rounded-xl transition-colors"
-            aria-label="Close">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+  <div class="modal-backdrop p-4">
+    <div class="modal-panel w-full max-w-6xl">
+      <div class="modal-header">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-500">Expense</p>
+          <h2 class="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{{ expenseData.id ? '编辑费用' : '新建费用' }}
+          </h2>
         </div>
+        <button @click="$emit('close')"
+          class="rounded-full p-2 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+          aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
 
         <!-- 重复数据警告 -->
         <div v-if="duplicateWarning"
@@ -38,8 +40,8 @@
 
         <form @submit.prevent="saveExpense">
           <div class="flex flex-col lg:flex-row gap-8">
-            <!-- 左侧：日期、费用大类、费用子类 -->
-            <div class="w-full lg:w-1/4">
+            <!-- 左侧：基础信息与金额 -->
+            <div class="w-full lg:w-1/2">
               <h3 class="font-bold text-lg text-gray-900 mb-4 flex items-center">
                 <span class="w-1.5 h-5 bg-primary-500 rounded-full mr-2"></span>
                 基础信息
@@ -74,17 +76,7 @@
                     </option>
                   </select>
                 </div>
-              </div>
-            </div>
 
-            <!-- 中间：费用说明、金额、凭证类型 -->
-            <div class="w-full lg:w-1/3">
-              <h3 class="font-bold text-lg text-gray-900 mb-4 flex items-center">
-                <span class="w-1.5 h-5 bg-emerald-500 rounded-full mr-2"></span>
-                凭证信息
-              </h3>
-
-              <div class="space-y-5 bg-surface-50 p-5 rounded-xl border border-surface-200">
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-1.5">费用说明</label>
                   <input v-model="expenseData.description" type="text" class="input-field" placeholder="请输入费用说明">
@@ -111,9 +103,19 @@
                     {{ error.amount }}
                   </p>
                 </div>
+              </div>
+            </div>
 
+            <!-- 右侧：凭证信息 -->
+            <div class="w-full lg:w-1/2">
+              <h3 class="font-bold text-lg text-gray-900 mb-4 flex items-center">
+                <span class="w-1.5 h-5 bg-emerald-500 rounded-full mr-2"></span>
+                凭证类型
+              </h3>
+
+              <div class="space-y-5 bg-surface-50 p-5 rounded-xl border border-surface-200">
                 <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">凭证类型 <span
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">选择凭证类型 <span
                       class="text-rose-500">*</span></label>
                   <div
                     class="space-y-2.5 max-h-48 overflow-y-auto pr-2 custom-scrollbar p-3 bg-white rounded-lg border border-surface-200">
@@ -128,69 +130,32 @@
                   </div>
                 </div>
 
-                <!-- 文件上传区 -->
+                <!-- 文件上传区恢复显示 -->
                 <div v-for="vtId in selectedVoucherTypes" :key="vtId" class="pt-4 mt-4 border-t border-surface-200">
                   <label class="block text-sm font-semibold text-gray-700 mb-2">
                     {{ getVoucherTypeName(vtId) }}文件 <span
                       class="text-primary-500 text-xs font-normal bg-primary-50 px-1.5 py-0.5 rounded">(可选)</span>
                   </label>
-                  <div class="relative group/upload">
-                    <input type="file" multiple @change="onFileChange($event, vtId)"
-                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                    <div
-                      class="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-primary-200 rounded-xl bg-primary-50/50 group-hover/upload:bg-primary-50 group-hover/upload:border-primary-400 transition-all">
+                  <button type="button" @click="openFilePicker(vtId)"
+                    class="group/upload flex w-full items-center justify-center rounded-2xl border border-dashed border-primary-200 bg-primary-50/50 px-4 py-4 text-left transition-all hover:border-primary-400 hover:bg-primary-50">
+                    <div class="flex items-center justify-center w-full">
                       <svg xmlns="http://www.w3.org/2000/svg"
                         class="h-5 w-5 text-primary-400 mr-2 group-hover/upload:text-primary-600" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      <span class="text-sm font-medium text-primary-600">点击或拖拽文件至此上传</span>
+                      <div class="flex flex-col items-start">
+                        <span class="text-sm font-medium text-primary-700">点击选择文件</span>
+                        <span class="mt-1 text-xs text-primary-500">支持一次选择多个文件，自动归类到当前凭证类型</span>
+                      </div>
                     </div>
-                  </div>
-                  <div v-if="selectedFiles[vtId] && selectedFiles[vtId].length > 0"
-                    class="mt-2 text-xs font-medium text-emerald-600 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20"
-                      fill="currentColor">
-                      <path fill-rule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clip-rule="evenodd" />
-                    </svg>
-                    已选择 {{ selectedFiles[vtId].length }} 个文件
-                  </div>
-                </div>
-              </div>
-            </div>
+                  </button>
 
-            <!-- 右侧：上传的文件 -->
-            <div class="w-full lg:w-[41.666667%]">
-              <h3 class="font-bold text-lg text-gray-900 mb-4 flex items-center">
-                <span class="w-1.5 h-5 bg-amber-500 rounded-full mr-2"></span>
-                附件管理
-              </h3>
-
-              <div class="bg-surface-50 p-5 rounded-xl border border-surface-200 h-[calc(100%-2rem)] flex flex-col">
-                <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-[300px]">
-                  <div v-if="Object.keys(selectedFiles).length === 0 && uploadedFiles.length === 0"
-                    class="h-full flex flex-col items-center justify-center text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2 opacity-50" fill="none"
-                      viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                    </svg>
-                    <p class="text-sm">暂无附件</p>
-                  </div>
-
-                  <div v-for="(files, vtId) in selectedFiles" :key="`new-${vtId}`" class="mb-6 last:mb-0">
-                    <h4 class="font-bold text-sm text-gray-700 mb-3 flex items-center">
-                      <span class="px-2 py-0.5 bg-primary-100 text-primary-700 rounded mr-2 text-xs">{{
-                        getVoucherTypeName(vtId) }}</span>
-                      <span class="text-xs font-normal text-gray-500">待上传</span>
-                    </h4>
+                  <div v-if="selectedFiles[vtId] && selectedFiles[vtId].length > 0" class="mt-3">
                     <ul class="space-y-2">
-                      <li v-for="(file, idx) in files" :key="`new-${vtId}-${idx}`"
-                        class="flex items-center justify-between bg-white p-3 rounded-xl border border-surface-200 shadow-sm cursor-pointer hover:border-primary-300 transition-colors group/file"
-                        @dblclick="previewFile(file)">
+                      <li v-for="(file, idx) in selectedFiles[vtId]" :key="`new-${vtId}-${idx}`"
+                        class="flex items-center justify-between bg-white p-3 rounded-xl border border-surface-200 shadow-sm cursor-pointer hover:border-primary-300 transition-colors group/file">
                         <div class="flex items-center overflow-hidden pr-2">
                           <div
                             class="w-8 h-8 rounded bg-primary-50 flex items-center justify-center text-primary-500 mr-3 flex-shrink-0">
@@ -202,7 +167,7 @@
                           </div>
                           <span
                             class="text-sm font-medium text-gray-700 truncate group-hover/file:text-primary-700 transition-colors">{{
-                            file.name }}</span>
+                              file.split(/[\\/]/).pop() }}</span>
                         </div>
                         <button type="button" @click="removeFile(vtId, idx)"
                           class="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors flex-shrink-0"
@@ -216,56 +181,51 @@
                       </li>
                     </ul>
                   </div>
+                </div>
 
-                  <!-- 已上传文件列表 -->
-                  <div v-if="uploadedFiles.length > 0"
-                    :class="{ 'pt-6 border-t border-surface-200': Object.keys(selectedFiles).length > 0 }">
-                    <h4 class="font-bold text-sm text-gray-700 mb-3 flex items-center">
-                      <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded mr-2 text-xs">已存文件</span>
-                    </h4>
-                    <ul class="space-y-2">
-                      <li v-for="(file, index) in uploadedFiles" :key="`stored-${index}`"
-                        class="flex items-center justify-between bg-white p-3 rounded-xl border border-surface-200 shadow-sm cursor-pointer hover:border-emerald-300 transition-colors group/file"
-                        @dblclick="previewStoredFile(file)">
-                        <div class="flex items-center overflow-hidden pr-2">
+                <!-- 已上传文件列表 -->
+                <div v-if="uploadedFiles.length > 0" class="pt-4 mt-4 border-t border-surface-200">
+                  <h4 class="font-bold text-sm text-gray-700 mb-3 flex items-center">
+                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded mr-2 text-xs">已存文件</span>
+                  </h4>
+                  <div class="space-y-3">
+                    <div v-for="(files, voucherTypeName) in groupedUploadedFiles" :key="`stored-${voucherTypeName}`"
+                      class="rounded-xl border border-surface-200 bg-white p-3 shadow-sm">
+                      <div class="mb-2 flex items-center justify-between">
+                        <span class="tag tag-green">{{ voucherTypeName }}</span>
+                        <span class="text-xs text-slate-400">{{ files.length }} 个文件</span>
+                      </div>
+                      <ul class="space-y-2">
+                        <li v-for="file in files" :key="file.id || file.file_path"
+                          class="flex items-center overflow-hidden rounded-xl border border-surface-100 bg-surface-50 px-3 py-2">
                           <div
-                            class="w-8 h-8 rounded bg-emerald-50 flex items-center justify-center text-emerald-500 mr-3 flex-shrink-0">
+                            class="mr-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-500">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                               stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                           </div>
-                          <span
-                            class="text-sm font-medium text-gray-700 truncate group-hover/file:text-emerald-700 transition-colors">{{
-                            getFileNameFromPath(file) }}</span>
-                        </div>
-                        <button type="button" @click="removeUploadedFile(index)"
-                          class="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors flex-shrink-0"
-                          title="删除">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </li>
-                    </ul>
+                          <span class="truncate text-sm font-medium text-slate-700">{{ file.file_name }}</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="mt-8 pt-6 border-t border-surface-100 flex justify-end space-x-3">
-            <button type="button" @click="$emit('close')" class="btn btn-secondary">
-              取消
-            </button>
-            <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
-              {{ expenseData.id ? '更新费用' : '保存费用' }}
-            </button>
-          </div>
         </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" @click="$emit('close')" class="btn btn-secondary">
+          取消
+        </button>
+        <button type="button" @click="saveExpense" class="btn btn-primary" :disabled="!isFormValid">
+          {{ expenseData.id ? '更新费用' : '保存费用' }}
+        </button>
       </div>
     </div>
   </div>
@@ -274,6 +234,9 @@
 <script lang="ts">
 import { expenseApi } from '../utils/tauriApi';
 import { defineComponent } from 'vue';
+import { open } from '@tauri-apps/plugin-dialog';
+import type { ExpenseDTO, ExpenseFile, VoucherType } from '../utils/tauriApi';
+
 export default defineComponent({
   name: 'NewExpenseModal',
   props: {
@@ -303,10 +266,10 @@ export default defineComponent({
         date: new Date().toISOString().split('T')[0] // 格式化为 YYYY-MM-DD
       },
       selectedMainCategory: '',
-      selectedVoucherTypes: [], // 多选凭证类型
-      selectedFiles: {}, // 存储按凭证类型分类的文件
-      uploadedFiles: [], // 存储已上传的文件路径
-      voucherTypes: [], // 从后端加载
+      selectedVoucherTypes: [] as Array<number | string>, // 多选凭证类型
+      selectedFiles: {} as Record<string, string[]>, // 存储按凭证类型分类的文件
+      uploadedFiles: [] as ExpenseFile[], // 存储已上传的文件路径
+      voucherTypes: [] as VoucherType[], // 从后端加载
       error: {
         amount: ''
       },
@@ -317,6 +280,16 @@ export default defineComponent({
     subCategories() {
       if (!this.selectedMainCategory) return [];
       return this.categories.categoriesByParent[this.selectedMainCategory] || [];
+    },
+    groupedUploadedFiles() {
+      return this.uploadedFiles.reduce((groups: Record<string, ExpenseFile[]>, file: ExpenseFile) => {
+        const key = file.voucher_type_name || '未分类凭证';
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(file);
+        return groups;
+      }, {});
     },
     isFormValid() {
       return this.expenseData.amount > 0 &&
@@ -349,26 +322,25 @@ export default defineComponent({
           this.selectedMainCategory = newVal.main_category_id || '';
 
           // 设置凭证类型
-          if (newVal.voucher_type_id) {
-            this.selectedVoucherTypes = [newVal.voucher_type_id]; // 单个ID
-          }
-
-          // 解析已存在的文件路径
-          if (newVal.file_paths) {
-            try {
-              this.uploadedFiles = JSON.parse(newVal.file_paths);
-            } catch (e) {
-              this.uploadedFiles = [newVal.file_paths]; // 如果不是JSON格式，则作为单一路径
-            }
+          if (newVal.files && Array.isArray(newVal.files)) {
+            this.uploadedFiles = newVal.files;
+            this.selectedVoucherTypes = Array.from(
+              new Set(
+                newVal.files
+                  .map((file: ExpenseFile) => file.voucher_type_id)
+                  .filter((id: number | undefined): id is number => typeof id === 'number')
+              )
+            );
           } else {
             this.uploadedFiles = [];
+            this.selectedVoucherTypes = [];
           }
 
-          // 如果有files属性（从expense_files表获取的文件），则合并到uploadedFiles
-          if (newVal.files && Array.isArray(newVal.files)) {
-            // 合并已存在的文件路径和从expense_files表获取的文件
-            this.uploadedFiles = [...new Set([...this.uploadedFiles, ...newVal.files])];
+          if (this.selectedVoucherTypes.length === 0 && newVal.voucher_type_id) {
+            this.selectedVoucherTypes = [newVal.voucher_type_id];
           }
+
+          this.selectedFiles = {};
         } else {
           // 如果没有传入初始数据，则清空并设置项目ID
           this.expenseData = {
@@ -411,70 +383,49 @@ export default defineComponent({
     onMainCategoryChange() {
       this.expenseData.sub_category_id = ''; // 重置子类别
     },
-    onFileChange(event: Event, voucherTypeId: string) {
-      // 获取文件列表
-      const files = Array.from((event.target as HTMLInputElement).files || []);
+    async openFilePicker(voucherTypeId: number | string) {
+      try {
+        const selected = await open({
+          multiple: true,
+          filters: [{
+            name: 'Documents',
+            extensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png']
+          }]
+        });
 
-      // 初始化对应凭证类型的文件数组
-      if (!this.selectedFiles[voucherTypeId]) {
-        this.selectedFiles[voucherTypeId] = [];
-      }
+        if (selected) {
+          const files = Array.isArray(selected) ? selected : [selected];
+          const voucherKey = String(voucherTypeId);
 
-      // 添加新文件，避免重复
-      files.forEach((file: File) => {
-        const existingIndex = this.selectedFiles[voucherTypeId].findIndex(f => f.name === file.name);
-        if (existingIndex === -1) {
-          this.selectedFiles[voucherTypeId].push(file);
-        } else {
-          console.warn(`文件 ${file.name} 已存在，跳过添加`);
+          if (!this.selectedFiles[voucherKey]) {
+            this.selectedFiles[voucherKey] = [];
+          }
+
+          files.forEach(path => {
+            if (typeof path !== 'string') {
+              return;
+            }
+
+            const existingIndex = this.selectedFiles[voucherKey].findIndex((filePath: string) => filePath === path);
+            if (existingIndex === -1) {
+              this.selectedFiles[voucherKey].push(path);
+            }
+          });
         }
-      });
-
-      // 清空input，以便可以重复选择相同文件
-      (event.target as HTMLInputElement).value = '';
+      } catch (err) {
+        console.error('选择文件失败:', err);
+      }
     },
-    getVoucherTypeName(voucherTypeId) {
-      const voucherType = this.voucherTypes.find(vt => vt.id == voucherTypeId);
+    getVoucherTypeName(voucherTypeId: number | string) {
+      const voucherType = this.voucherTypes.find((vt: VoucherType) => vt.id == Number(voucherTypeId));
       return voucherType ? voucherType.name : '未知类型';
     },
-    removeFile(voucherTypeId, index) {
-      this.selectedFiles[voucherTypeId].splice(index, 1);
+    removeFile(voucherTypeId: number | string, index: number) {
+      const voucherKey = String(voucherTypeId);
+      this.selectedFiles[voucherKey].splice(index, 1);
       // 如果该类型下没有文件了，删除该类型键
-      if (this.selectedFiles[voucherTypeId].length === 0) {
-        delete this.selectedFiles[voucherTypeId];
-      }
-    },
-    removeUploadedFile(index) {
-      this.uploadedFiles.splice(index, 1);
-    },
-    getFileNameFromPath(filePath) {
-      // 从完整路径中提取文件名
-      return filePath.split('\\').pop().split('/').pop();
-    },
-    previewFile(file) {
-      // 创建一个对象URL来预览文件
-      const fileURL = URL.createObjectURL(file);
-      window.open(fileURL, '_blank');
-
-      // 记得释放对象URL以避免内存泄漏
-      setTimeout(() => URL.revokeObjectURL(fileURL), 1000);
-    },
-    previewStoredFile(filePath) {
-      // 根据后端的路径规则构建访问URL
-      const pathParts = filePath.split('/');
-      if (pathParts.length >= 2) {
-        const projectName = encodeURIComponent(pathParts[pathParts.length - 2] || 'default');
-        const fileName = encodeURIComponent(pathParts[pathParts.length - 1]);
-        const apiUrl = `/api/uploads/${projectName}/${fileName}`;
-
-        // 尝试预览已存储的文件
-        window.open(apiUrl, '_blank');
-      } else {
-        const fileName = this.getFileNameFromPath(filePath);
-        const apiUrl = `/api/uploads/default/${encodeURIComponent(fileName)}`;
-
-        // 尝试预览已存储的文件
-        window.open(apiUrl, '_blank');
+      if (this.selectedFiles[voucherKey].length === 0) {
+        delete this.selectedFiles[voucherKey];
       }
     },
     async checkDuplicateExpense() {
@@ -484,14 +435,13 @@ export default defineComponent({
       }
 
       try {
-        const params = new URLSearchParams({
-          project_id: this.projectId,
-          amount: this.expenseData.amount,
-          date: this.expenseData.date,
-          sub_category_id: this.expenseData.sub_category_id
-        });
-
         // TODO: 实现实际的重复检查 API 调用
+        // const params = new URLSearchParams({
+        //   project_id: String(this.projectId),
+        //   amount: String(this.expenseData.amount),
+        //   date: String(this.expenseData.date),
+        //   sub_category_id: String(this.expenseData.sub_category_id)
+        // });
         // const response = await fetch(`/api/expenses/check-duplicate?${params.toString()}`);
         // if (response.ok) {
         //   const data = await response.json();
@@ -520,26 +470,50 @@ export default defineComponent({
       }
 
       // 准备DTO数据
-      const expenseDto = {
+      const expenseDto: ExpenseDTO = {
         project_id: this.projectId,
         amount: Number(this.expenseData.amount),
         main_category_id: parseInt(this.selectedMainCategory),
         sub_category_id: parseInt(this.expenseData.sub_category_id),
         description: this.expenseData.description,
-        expense_date: this.expenseData.date,
-        voucher_type_ids: this.selectedVoucherTypes.map(id => parseInt(id as any))
+        date: this.expenseData.date,
+        voucher_type_ids: this.selectedVoucherTypes.map((id: number | string) => parseInt(String(id), 10))
       };
 
       try {
-        let result;
+        let result: { id?: number } | null = null;
         if (this.expenseData.id) {
           result = await expenseApi.updateExpense(this.expenseData.id, expenseDto);
         } else {
           result = await expenseApi.createExpense(expenseDto);
         }
 
-        // 注意：这里的实现中忽略了文件上传逻辑，因为后端需要相应的处理支持
-        // 如果后端有处理文件的接口，可以在这里调用
+        // 上传文件逻辑
+        if (result && result.id) {
+          const expenseId = result.id;
+
+          for (const voucherTypeId in this.selectedFiles) {
+            for (const filePath of this.selectedFiles[voucherTypeId]) {
+              const dateStr = this.expenseData.date.replace(/-/g, '');
+              const desc = this.expenseData.description ? `-${this.expenseData.description}` : '';
+
+              const subCatObj = this.subCategories.find((c: { id?: number; name: string }) => c.id === parseInt(this.expenseData.sub_category_id as string));
+              const subCatName = subCatObj ? `-${subCatObj.name}` : '';
+
+              const ext = filePath.split('.').pop() || '';
+              const newFileName = `${dateStr}-${expenseId}${desc}${subCatName}.${ext}`;
+
+              try {
+                await expenseApi.uploadExpenseFile(expenseId, filePath, newFileName, Number(voucherTypeId));
+              } catch (e) {
+                console.error(`上传文件 ${filePath} 失败:`, e);
+              }
+            }
+          }
+
+          this.uploadedFiles = await expenseApi.getExpenseFiles(expenseId);
+          this.selectedFiles = {};
+        }
 
         this.$emit('save', result);
       } catch (error: any) {

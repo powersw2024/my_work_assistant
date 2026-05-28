@@ -16,6 +16,8 @@ export interface ProjectDTO {
   name: string;
   description?: string;
   status?: string;
+  start_date?: string;
+  end_date?: string | null;
 }
 
 export interface WorkLog {
@@ -43,25 +45,35 @@ export interface WorkLogDTO {
   next_day_plan?: string;
 }
 
+export interface UpdateWorkLogDTO {
+  log_date?: string;
+  author?: string;
+  executor?: string;
+  weather?: string;
+  location?: string;
+  content?: string;
+  next_day_plan?: string;
+}
+
 export interface Expense {
   id?: number;
   project_id: number;
-  person_id: number;
+  person_id?: number;
   main_category_id: number;
   sub_category_id: number;
   amount: number | string; // 支持 number 或 string 类型
-  expense_date: string;
+  expense_date?: string;
   description?: string;
   created_at?: string;
   updated_at?: string;
-  
+
   // 以下字段来自关联查询
   date?: string; // expense_date 的别名，用于兼容前端显示
   main_category?: string; // 主类别名称
   sub_category?: string; // 子类别名称
   voucher_type?: string; // 凭证类型字符串（多个类型用逗号分隔）
-  files?: Array<{ file_name: string; file_path: string }>; // 文件列表
-  file_paths?: string[]; // 文件路径数组
+  files?: ExpenseFile[]; // 文件列表
+  file_paths?: string[] | string; // 文件路径数组
 }
 
 export interface ExpenseDTO {
@@ -70,7 +82,7 @@ export interface ExpenseDTO {
   main_category_id: number;
   sub_category_id: number;
   description?: string;
-  expense_date: string;
+  date: string;
   voucher_type_ids?: number[]; // 改为数组以支持多个凭证类型
 }
 
@@ -102,10 +114,12 @@ export interface VoucherTypeDTO {
 
 export interface ExpenseFile {
   id?: number;
-  expense_id: number;
+  expense_record_id: number;
   file_name: string;
   file_path: string;
-  file_size: number;
+  file_size?: number;
+  voucher_type_id?: number;
+  voucher_type_name?: string;
   created_at?: string;
 }
 
@@ -165,11 +179,46 @@ export const projectApi = {
 };
 
 // ===== Work Log APIs =====
+const normalizeExecutor = (executor?: string | string[]): string | undefined => {
+  if (Array.isArray(executor)) {
+    const value = executor.map(item => item.trim()).filter(Boolean).join(', ');
+    return value || undefined;
+  }
+
+  if (typeof executor === 'string') {
+    const value = executor.trim();
+    return value || undefined;
+  }
+
+  return undefined;
+};
+
+const toCreateWorkLogDto = (log: Partial<WorkLog>): WorkLogDTO => ({
+  project_id: Number(log.project_id),
+  log_date: log.log_date || '',
+  author: log.author || '系统用户',
+  executor: normalizeExecutor(log.executor),
+  weather: log.weather || '晴',
+  location: log.location?.trim() || undefined,
+  content: log.content || '',
+  next_day_plan: log.next_day_plan?.trim() || undefined
+});
+
+const toUpdateWorkLogDto = (log: Partial<WorkLog>): UpdateWorkLogDTO => ({
+  log_date: log.log_date,
+  author: log.author,
+  executor: normalizeExecutor(log.executor),
+  weather: log.weather,
+  location: log.location?.trim() || undefined,
+  content: log.content,
+  next_day_plan: log.next_day_plan?.trim() || undefined
+});
+
 export const workLogApi = {
   getWorkLogs: (projectId: number): Promise<WorkLog[]> => invoke('get_work_logs', { projectId }),
   getWorkLog: (id: number): Promise<WorkLog> => invoke('get_work_log', { id }),
-  createWorkLog: (dto: WorkLogDTO): Promise<WorkLog> => invoke('create_work_log', { dto }),
-  updateWorkLog: (id: number, dto: WorkLogDTO): Promise<WorkLog> => invoke('update_work_log', { id, dto }),
+  createWorkLog: (dto: Partial<WorkLog>): Promise<WorkLog> => invoke('create_work_log', { dto: toCreateWorkLogDto(dto) }),
+  updateWorkLog: (id: number, dto: Partial<WorkLog>): Promise<WorkLog> => invoke('update_work_log', { id, dto: toUpdateWorkLogDto(dto) }),
   deleteWorkLog: (id: number): Promise<void> => invoke('delete_work_log', { id })
 };
 
@@ -186,7 +235,9 @@ export const expenseApi = {
   getVoucherTypes: (): Promise<VoucherType[]> => invoke('get_voucher_types'),
   createVoucherType: (dto: VoucherTypeDTO): Promise<VoucherType> => invoke('create_voucher_type', { dto }),
   deleteVoucherType: (id: number): Promise<void> => invoke('delete_voucher_type', { id }),
-  getExpenseFiles: (expenseId: number): Promise<ExpenseFile[]> => invoke('get_expense_files', { expenseId })
+  getExpenseFiles: (expenseId: number): Promise<ExpenseFile[]> => invoke('get_expense_files', { expenseId }),
+  uploadExpenseFile: (expenseId: number, filePath: string, fileName: string, voucherTypeId?: number): Promise<ExpenseFile> =>
+    invoke('upload_expense_file', { expenseId, filePath, fileName, voucherTypeId })
 };
 
 // ===== Person APIs =====

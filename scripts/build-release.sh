@@ -109,8 +109,9 @@ echo "=========================================="
 echo "📦 Step 5/5: 打包应用"
 echo "=========================================="
 
-echo "🔨 使用 electron-builder 打包..."
-npx electron-builder --mac --x64
+echo "🔨 使用 tauri build 打包..."
+cd "$PROJECT_ROOT"
+npm run tauri:build
 
 echo ""
 echo "=========================================="

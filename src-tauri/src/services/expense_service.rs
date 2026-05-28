@@ -215,7 +215,21 @@ pub async fn delete_voucher_type(pool: &SqlitePool, id: i64) -> Result<(), Strin
 
 pub async fn get_expense_files(pool: &SqlitePool, expense_id: i64) -> Result<Vec<ExpenseFile>, String> {
     let files = sqlx::query_as::<_, ExpenseFile>(
-        "SELECT * FROM expense_files WHERE expense_record_id = ?"
+        r#"
+        SELECT
+            ef.id,
+            ef.expense_record_id,
+            ef.file_path,
+            ef.file_name,
+            ef.voucher_type_id,
+            vt.name as voucher_type_name,
+            ef.file_size,
+            ef.created_at
+        FROM expense_files ef
+        LEFT JOIN voucher_types vt ON ef.voucher_type_id = vt.id
+        WHERE ef.expense_record_id = ?
+        ORDER BY ef.created_at DESC, ef.id DESC
+        "#
     )
     .bind(expense_id)
     .fetch_all(pool)
@@ -232,15 +246,29 @@ pub async fn create_expense_file(
     expense_id: i64, 
     file_path: &str, 
     file_name: &str, 
-    file_size: i64
+    file_size: i64,
+    voucher_type_id: Option<i64>,
 ) -> Result<ExpenseFile, String> {
     let file = sqlx::query_as::<_, ExpenseFile>(
-        "INSERT INTO expense_files (expense_record_id, file_path, file_name, file_size) VALUES (?, ?, ?, ?) RETURNING *"
+        r#"
+        INSERT INTO expense_files (expense_record_id, file_path, file_name, file_size, voucher_type_id)
+        VALUES (?, ?, ?, ?, ?)
+        RETURNING
+            id,
+            expense_record_id,
+            file_path,
+            file_name,
+            voucher_type_id,
+            NULL as voucher_type_name,
+            file_size,
+            created_at
+        "#
     )
     .bind(expense_id)
     .bind(file_path)
     .bind(file_name)
     .bind(file_size)
+    .bind(voucher_type_id)
     .fetch_one(pool)
     .await
     .map_err(|e| format!("创建费用文件记录失败: {}", e))?;

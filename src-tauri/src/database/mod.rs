@@ -41,6 +41,8 @@ impl Database {
         // 执行schema
         sqlx::query(schema).execute(&self.pool).await?;
 
+        self.run_migrations().await?;
+
         info!("数据库schema初始化完成");
 
         // 插入默认数据
@@ -63,6 +65,26 @@ impl Database {
         self.insert_default_voucher_types().await?;
 
         info!("默认数据检查和插入完成");
+        Ok(())
+    }
+
+    async fn run_migrations(&self) -> Result<(), sqlx::Error> {
+        let expense_files_columns =
+            sqlx::query_scalar::<_, String>("SELECT name FROM pragma_table_info('expense_files')")
+                .fetch_all(&self.pool)
+                .await
+                .unwrap_or_default();
+
+        if !expense_files_columns
+            .iter()
+            .any(|column| column == "voucher_type_id")
+        {
+            info!("为 expense_files 表补充 voucher_type_id 字段");
+            sqlx::query("ALTER TABLE expense_files ADD COLUMN voucher_type_id INTEGER REFERENCES voucher_types(id)")
+                .execute(&self.pool)
+                .await?;
+        }
+
         Ok(())
     }
 

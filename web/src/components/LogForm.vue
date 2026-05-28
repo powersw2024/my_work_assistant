@@ -1,19 +1,18 @@
 <template>
   <div class="card p-6 shadow-card">
     <h4 class="font-semibold text-lg text-gray-800 mb-4 flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
       </svg> 添加工作日志
     </h4>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- 左侧：基本信息 -->
       <div class="space-y-4">
-        <DatePicker
-          :model-value="formState.localLog.log_date"
-          @update:model-value="formState.localLog.log_date = $event"
-          label="日志日期"
-        />
-        
+        <DatePicker :model-value="formState.localLog.log_date"
+          @update:model-value="formState.localLog.log_date = $event" label="日志日期" />
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">人员（可多选）</label>
           <div class="border rounded-lg p-2 max-h-40 overflow-y-auto">
@@ -24,25 +23,21 @@
             </div>
           </div>
         </div>
-        
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">地点</label>
           <input v-model="formState.localLog.location" type="text" placeholder="请输入工作地点" class="input-field w-full">
         </div>
-        
-        <Selector 
-          v-model="formState.localLog.weather"
-          label="天气"
-          :options="weatherOptions"
-        />
+
+        <Selector v-model="formState.localLog.weather" label="天气" :options="weatherOptions" />
       </div>
 
       <!-- 右侧：工作内容 -->
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">今日工作</label>
-          <textarea v-model="formState.localLog.content" placeholder="请输入详细工作内容" rows="10"
-            class="input-field w-full" style="font-family: monospace;"></textarea>
+          <textarea v-model="formState.localLog.content" placeholder="请输入详细工作内容" rows="10" class="input-field w-full"
+            style="font-family: monospace;"></textarea>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">明日计划</label>
@@ -168,7 +163,7 @@ export default defineComponent({
     // 同步日志数据到localLog
     const syncLogToLocalLog = (log: Partial<WorkLog>) => {
       if (!log) return;
-      
+
       formState.localLog.id = log.id;
       formState.localLog.log_date = log.log_date || '';
       formState.localLog.weather = log.weather || '晴';
@@ -202,10 +197,10 @@ export default defineComponent({
         emit('error', '请填写工作量内容');
         return false;
       }
-      
+
       // 更新executor数据
       formState.localLog.executor = [...formState.selectedPersonnel];
-      
+
       return true;
     };
 
@@ -214,13 +209,16 @@ export default defineComponent({
       if (!validateForm()) {
         return;
       }
-      
+
       const formData = {
         ...formState.localLog,
         executor: [...formState.selectedPersonnel]
       };
-      
+
       emit('submit', formData);
+
+      // 提交成功后清除缓存
+      clearFormDataFromLocalStorage();
     };
 
     // 保存当前表单数据到本地存储
@@ -292,13 +290,43 @@ export default defineComponent({
     watch(
       () => props.log,
       (newVal) => {
-        if (newVal && newVal.id) {
-          syncLogToLocalLog(newVal);
-        } else if (newVal && !newVal.id) {
-          if (newVal.log_date && newVal.log_date !== formState.localLog.log_date) {
-            formState.localLog.log_date = newVal.log_date;
+        // 如果是新创建（没有id），不从缓存加载
+        if (!newVal || !newVal.id) {
+          // 清空本地存储中的草稿数据
+          clearFormDataFromLocalStorage();
+
+          formState.localLog = {
+            id: null,
+            log_date: getCurrentDate(),
+            executor: [],
+            weather: '晴',
+            location: '',
+            content: '',
+            next_day_plan: '',
+            author: '系统用户'
+          } as LogFormData;
+          formState.selectedPersonnel = [];
+
+          // 如果传入了部分初始值(如日期)，则覆盖
+          if (newVal) {
+            if (newVal.log_date) formState.localLog.log_date = newVal.log_date;
+            if (newVal.project_id) formState.localLog.project_id = newVal.project_id;
+            if (newVal.author) formState.localLog.author = newVal.author;
+            // 处理 executor 数组
+            if (newVal.executor) {
+              if (Array.isArray(newVal.executor)) {
+                formState.selectedPersonnel = [...newVal.executor];
+              } else if (typeof newVal.executor === 'string' && newVal.executor) {
+                formState.selectedPersonnel = (newVal.executor as string).split(',').map(e => e.trim()).filter(e => e);
+              }
+              formState.localLog.executor = [...formState.selectedPersonnel];
+            }
           }
+          return;
         }
+
+        // 如果是编辑模式，正常加载
+        syncLogToLocalLog(newVal);
       },
       { deep: true }
     );

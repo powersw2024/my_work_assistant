@@ -10,43 +10,29 @@ use commands::{
     expense_commands, person_setting_commands, project_commands, report_commands, work_log_commands,
 };
 use database::Database;
-use std::path::PathBuf;
 use tauri::Manager;
 
 fn main() {
-    // 获取当前运行目录作为应用数据目录
-    let app_data_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-
-    // 数据库路径
-    let db_path = app_data_dir.join("database.sqlite");
-
     // 创建Tauri应用
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(move |app| {
-            // 异步初始化数据库
-            let app_handle = app.handle().clone();
-            let db_path = db_path.clone();
+            let app_data_dir = app
+                .path()
+                .app_data_dir()
+                .expect("无法获取应用数据目录");
+            std::fs::create_dir_all(&app_data_dir).expect("无法创建应用数据目录");
 
-            tauri::async_runtime::spawn(async move {
-                match Database::new(&db_path).await {
-                    Ok(db) => {
-                        if let Err(e) = db.init_schema().await {
-                            log::error!("数据库schema初始化失败: {}", e);
-                        }
+            let db_path = app_data_dir.join("database.sqlite");
+            let db = tauri::async_runtime::block_on(Database::new(&db_path))
+                .expect("数据库连接失败");
 
-                        // 将数据库管理到状态中
-                        app_handle.manage(db);
-                        log::info!("数据库初始化完成");
-                    }
-                    Err(e) => {
-                        log::error!("数据库连接失败: {}", e);
-                    }
-                }
-            });
+            tauri::async_runtime::block_on(db.init_schema()).expect("数据库schema初始化失败");
 
+            app.manage(db);
+            log::info!("数据库初始化完成");
             Ok(())
         })
         // 注册所有命令
@@ -76,6 +62,7 @@ fn main() {
             expense_commands::create_voucher_type,
             expense_commands::delete_voucher_type,
             expense_commands::get_expense_files,
+            expense_commands::upload_expense_file,
             // 人员和设置命令
             person_setting_commands::get_persons,
             person_setting_commands::create_person,

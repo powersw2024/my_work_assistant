@@ -1,22 +1,77 @@
 <template>
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
-    <!-- 使用ProjectSelector组件显示项目卡片 -->
-    <ProjectSelector :projects="projects" :selectedProjectId="0" @project-changed="selectProject"
-      @new-project="showNewProjectModal = true" @open-settings="showSettingsModal = true"
-      @edit-project="editProjectById" @delete-project="deleteProject" @select-project="goToProjectDetail">
-    </ProjectSelector>
+  <div class="app-shell">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <section class="hero-panel overflow-hidden">
+        <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-3xl space-y-4">
+            <span class="eyebrow">Project Workspace</span>
+            <div class="space-y-3">
+              <h1 class="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">macOS 风格项目工作台</h1>
+              <p class="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+                统一管理项目台账、日志记录与报销数据，界面遵循 macOS 桌面应用的层次、留白与交互节奏。
+              </p>
+            </div>
+          </div>
 
-    <!-- 新建项目弹窗 -->
-    <NewProjectModal v-if="showNewProjectModal" :initialData="editingProject" :isEditing="!!editingProject"
-      @close="showNewProjectModal = false" @create="createProject" @update="updateProject" />
+          <div class="flex flex-wrap gap-3">
+            <button @click="showSettingsModal = true" class="btn btn-secondary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              系统设置
+            </button>
+            <button @click="openCreateProjectModal" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 5v14m7-7H5" />
+              </svg>
+              新建项目
+            </button>
+          </div>
+        </div>
 
-    <!-- 系统设置弹窗 -->
-    <div v-if="showSettingsModal"
-      class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
-      <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col transform transition-all duration-300 scale-100 opacity-100">
-        <SettingsModal @close="showSettingsModal = false" class="flex-1 overflow-y-auto" />
-      </div>
+        <div class="relative z-10 mt-8 grid gap-4 sm:grid-cols-3">
+          <article class="stat-card">
+            <p class="stat-label">项目总数</p>
+            <p class="stat-value">{{ statistics.totalProjects }}</p>
+            <p class="stat-meta">当前数据库中的全部项目</p>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">进行中</p>
+            <p class="stat-value text-primary-800">{{ statistics.activeProjects }}</p>
+            <p class="stat-meta">可继续记录日志和费用</p>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">已结束</p>
+            <p class="stat-value text-amber-700">{{ statistics.completedProjects }}</p>
+            <p class="stat-meta">保留归档信息与导出能力</p>
+          </article>
+        </div>
+      </section>
+
+      <section v-if="error" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        {{ error }}
+      </section>
+
+      <section v-if="loading" class="glass-panel flex min-h-[320px] items-center justify-center">
+        <div class="flex flex-col items-center gap-4 text-slate-500">
+          <div class="h-10 w-10 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600"></div>
+          <span class="text-sm font-medium">正在加载项目数据...</span>
+        </div>
+      </section>
+
+      <ProjectSelector v-else :projects="projects" :selectedProjectId="0" @project-changed="selectProject"
+        @new-project="openCreateProjectModal" @open-settings="showSettingsModal = true" @edit-project="editProjectById"
+        @delete-project="deleteProject" @select-project="goToProjectDetail" />
+
+      <NewProjectModal v-if="showNewProjectModal" :initialData="editingProject" :isEditing="!!editingProject"
+        :existing-projects="projects" @close="closeProjectModal" @create="createProject" @update="updateProject" />
+
+      <SettingsModal v-if="showSettingsModal" @close="showSettingsModal = false" />
     </div>
   </div>
 </template>
@@ -96,11 +151,13 @@ export default defineComponent({
     },
     async createProject(projectData: ProjectDTO) {
       try {
-        await projectApi.createProject(projectData);
-        this.showNewProjectModal = false;
-        this.editingProject = null;
+        const createdProject = await projectApi.createProject(projectData);
+        this.closeProjectModal();
         await this.loadProjects();
         await this.loadStatistics();
+        if (createdProject.id) {
+          this.$router.push({ path: `/project/${createdProject.id}` });
+        }
       } catch (error: any) {
         console.error('创建项目时出错:', error);
         alert(`创建失败: ${error.message}`);
@@ -113,12 +170,13 @@ export default defineComponent({
         const dto: ProjectDTO = {
           name: projectData.name,
           description: projectData.description,
+          start_date: projectData.start_date || '',
+          end_date: projectData.end_date || null,
           status: projectData.status
         };
 
         await projectApi.updateProject(projectData.id, dto);
-        this.showNewProjectModal = false;
-        this.editingProject = null;
+        this.closeProjectModal();
         await this.loadProjects();
         await this.loadStatistics();
       } catch (error: any) {
@@ -128,11 +186,19 @@ export default defineComponent({
     },
     editProjectById(id: number) {
       // 根据ID获取项目信息并打开编辑模态框
-      const project = this.projects.find(p => p.id === id);
+      const project = this.projects.find((p: Project) => p.id === id);
       if (project) {
         this.editingProject = { ...project };
         this.showNewProjectModal = true;
       }
+    },
+    openCreateProjectModal() {
+      this.editingProject = null;
+      this.showNewProjectModal = true;
+    },
+    closeProjectModal() {
+      this.showNewProjectModal = false;
+      this.editingProject = null;
     },
     async deleteProject(id: number) {
       if (confirm('确定要删除这个项目吗？')) {
