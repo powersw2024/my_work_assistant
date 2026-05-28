@@ -1,46 +1,57 @@
 <template>
-  <div class="p-4">
-    <h2 class="text-xl font-bold text-gray-800 mb-6">费用报表</h2>
-    
+  <div>
     <!-- 总体费用统计 -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white p-6 rounded-xl shadow border-l-4 border-blue-500">
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">总费用</h3>
-        <p class="text-2xl font-bold text-gray-900">¥{{ totalExpensesFormatted }}</p>
+      <div class="card p-6 border-l-4 border-l-primary-500 hover:-translate-y-1 transition-transform duration-300">
+        <h3 class="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">总费用</h3>
+        <p class="text-3xl font-bold text-gray-900">¥{{ totalExpensesFormatted }}</p>
       </div>
-      <div class="bg-white p-6 rounded-xl shadow border-l-4 border-green-500">
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">有发票金额</h3>
-        <p class="text-2xl font-bold text-gray-900">¥{{ totalWithInvoiceFormatted }}</p>
+      <div class="card p-6 border-l-4 border-l-emerald-500 hover:-translate-y-1 transition-transform duration-300">
+        <h3 class="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">有发票金额</h3>
+        <p class="text-3xl font-bold text-gray-900">¥{{ totalWithInvoiceFormatted }}</p>
       </div>
-      <div class="bg-white p-6 rounded-xl shadow border-l-4 border-yellow-500">
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">零星材料费</h3>
-        <p class="text-2xl font-bold text-gray-900">¥{{ miscellaneousTotalFormatted }}</p>
+      <div class="card p-6 border-l-4 border-l-amber-500 hover:-translate-y-1 transition-transform duration-300">
+        <h3 class="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">零星材料费</h3>
+        <p class="text-3xl font-bold text-gray-900">¥{{ miscellaneousTotalFormatted }}</p>
       </div>
     </div>
 
     <!-- 费用大类统计图表和有发票费用大类统计图表并排显示 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
       <!-- 费用大类统计图表 -->
-      <div class="bg-white p-6 rounded-xl shadow">
-        <h3 class="text-lg font-semibold text-gray-800 mb-6">各费用大类金额统计</h3>
-        <div class="chart-container" style="height: 400px;">
-          <canvas ref="categoryChartCanvas" width="400" height="400"></canvas>
+      <div class="card p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+          <span class="w-2 h-6 bg-primary-500 rounded-full mr-2"></span>
+          各费用大类金额统计
+        </h3>
+        <div class="chart-container" style="height: 350px;">
+          <canvas ref="categoryChartCanvas"></canvas>
         </div>
       </div>
 
       <!-- 有发票费用大类统计图表 -->
-      <div class="bg-white p-6 rounded-xl shadow">
-        <h3 class="text-lg font-semibold text-gray-800 mb-6">各费用大类有发票金额统计</h3>
-        <div class="chart-container" style="height: 400px;">
-          <canvas ref="invoiceChartCanvas" width="400" height="400"></canvas>
+      <div class="card p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+          <span class="w-2 h-6 bg-emerald-500 rounded-full mr-2"></span>
+          各费用大类有发票金额统计
+        </h3>
+        <div class="chart-container" style="height: 350px;">
+          <canvas ref="invoiceChartCanvas"></canvas>
         </div>
       </div>
     </div>
 
     <!-- 伙食补贴说明 -->
-    <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-      <h4 class="font-medium text-blue-800 mb-2">伙食补贴统计</h4>
-      <p class="text-blue-700 text-sm">项目天数：{{ statistics.project_days }} 天，伙食补贴：¥{{ mealAllowanceFormatted }}（每日90元）</p>
+    <div class="p-5 bg-gradient-to-r from-primary-50 to-indigo-50 rounded-2xl border border-primary-100/50 shadow-sm flex items-start">
+      <div class="p-2 bg-white rounded-xl shadow-sm text-primary-500 mr-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <h4 class="font-bold text-primary-900 mb-1">伙食补贴统计</h4>
+        <p class="text-primary-700 text-sm">项目天数：<span class="font-bold">{{ statistics.project_days }}</span> 天，伙食补贴：<span class="font-bold text-lg">¥{{ mealAllowanceFormatted }}</span>（每日90元基础标准，扣除餐费后的实际发放额）</p>
+      </div>
     </div>
   </div>
 </template>

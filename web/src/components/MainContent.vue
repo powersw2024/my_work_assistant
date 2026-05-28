@@ -1,38 +1,21 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <!-- 显示调试信息 -->
-    <div class="mb-4 p-4 bg-blue-50 text-blue-700 rounded">
-      <p>项目数量: {{ projects.length }}</p>
-      <p v-if="loading">正在加载项目...</p>
-      <p v-else-if="error" class="text-red-500">错误: {{ error }}</p>
-    </div>
-
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
     <!-- 使用ProjectSelector组件显示项目卡片 -->
-    <ProjectSelector 
-      :projects="projects" 
-      :selectedProjectId="0"
-      @project-changed="selectProject"
-      @new-project="showNewProjectModal = true"
-      @open-settings="showSettingsModal = true"
-      @edit-project="editProjectById"
-      @delete-project="deleteProject"
-      @select-project="goToProjectDetail"
-    ></ProjectSelector>
+    <ProjectSelector :projects="projects" :selectedProjectId="0" @project-changed="selectProject"
+      @new-project="showNewProjectModal = true" @open-settings="showSettingsModal = true"
+      @edit-project="editProjectById" @delete-project="deleteProject" @select-project="goToProjectDetail">
+    </ProjectSelector>
 
     <!-- 新建项目弹窗 -->
-    <NewProjectModal 
-      v-if="showNewProjectModal"
-      :initialData="editingProject"
-      :isEditing="!!editingProject"
-      @close="showNewProjectModal = false"
-      @create="createProject"
-      @update="updateProject"
-    />
-    
+    <NewProjectModal v-if="showNewProjectModal" :initialData="editingProject" :isEditing="!!editingProject"
+      @close="showNewProjectModal = false" @create="createProject" @update="updateProject" />
+
     <!-- 系统设置弹窗 -->
-    <div v-if="showSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-        <SettingsModal @close="showSettingsModal = false" />
+    <div v-if="showSettingsModal"
+      class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
+      <div
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col transform transition-all duration-300 scale-100 opacity-100">
+        <SettingsModal @close="showSettingsModal = false" class="flex-1 overflow-y-auto" />
       </div>
     </div>
   </div>
@@ -126,13 +109,13 @@ export default defineComponent({
     async updateProject(projectData: Project) {
       try {
         if (!projectData.id) return;
-        
+
         const dto: ProjectDTO = {
           name: projectData.name,
           description: projectData.description,
           status: projectData.status
         };
-        
+
         await projectApi.updateProject(projectData.id, dto);
         this.showNewProjectModal = false;
         this.editingProject = null;

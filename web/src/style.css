@@ -5,140 +5,118 @@
 @layer base {
   html {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    @apply text-gray-800 antialiased;
   }
-}
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #f9fafb;
+  body {
+    @apply bg-surface-50 text-gray-800 m-0 p-0;
+  }
 }
 
 /* 解决Vue 3与Tailwind的一些兼容性问题 */
 #app {
-  height: 100vh;
-  width: 100%;
+  @apply min-h-screen w-full flex flex-col;
 }
 
 /* 卡片样式 */
 .card {
-  @apply bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md flex flex-col;
+  @apply bg-white rounded-2xl shadow-soft border border-surface-200 transition-all duration-300 hover:shadow-card flex flex-col;
 }
 
 /* 按钮样式 */
 .btn {
-  @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer;
+  @apply inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
 }
 
 .btn-primary {
-  @apply btn bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500;
+  @apply btn bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500 shadow-sm hover:shadow;
 }
 
 .btn-secondary {
-  @apply btn bg-gray-200 hover:bg-gray-300 text-gray-800 focus:ring-gray-500;
+  @apply btn bg-surface-100 hover:bg-surface-200 text-gray-700 focus:ring-gray-400;
 }
 
 .btn-success {
-  @apply btn bg-green-600 hover:bg-green-700 text-white focus:ring-green-500;
+  @apply btn bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500 shadow-sm hover:shadow;
 }
 
 .btn-danger {
-  @apply btn bg-red-600 hover:bg-red-700 text-white focus:ring-red-500;
+  @apply btn bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500 shadow-sm hover:shadow;
 }
 
 .btn-outline {
-  @apply btn bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+  @apply btn bg-transparent border-2 border-surface-200 text-gray-700 hover:bg-surface-50 hover:border-surface-300 focus:ring-gray-400;
 }
 
 /* 输入框样式 */
 .input-field {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200;
+  @apply w-full px-4 py-2.5 bg-white border border-surface-300 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all duration-200 placeholder:text-gray-400;
 }
 
 /* 表格样式 */
+.table-container {
+  @apply overflow-x-auto rounded-2xl border border-surface-200 bg-white;
+}
+
 .table {
-  @apply min-w-full divide-y divide-gray-200;
+  @apply min-w-full divide-y divide-surface-200;
 }
 
 .table th {
-  @apply px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+  @apply px-6 py-4 bg-surface-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap;
 }
 
 .table td {
-  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-700 transition-colors duration-150;
 }
 
-.table tr:nth-child(even) {
-  @apply bg-gray-50;
+.table tbody tr {
+  @apply hover:bg-primary-50/50 transition-colors duration-150;
 }
 
 /* 标签样式 */
 .tag {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  @apply inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wide;
 }
 
 .tag-blue {
-  @apply tag bg-blue-100 text-blue-800;
+  @apply tag bg-primary-50 text-primary-700 border border-primary-100;
 }
 
 .tag-green {
-  @apply tag bg-green-100 text-green-800;
+  @apply tag bg-emerald-50 text-emerald-700 border border-emerald-100;
 }
 
 .tag-yellow {
-  @apply tag bg-yellow-100 text-yellow-800;
+  @apply tag bg-amber-50 text-amber-700 border border-amber-100;
 }
 
 .tag-red {
-  @apply tag bg-red-100 text-red-800;
+  @apply tag bg-rose-50 text-rose-700 border border-rose-100;
 }
 
-/* 进度条样式 - 限制最大高度 */
+.tag-gray {
+  @apply tag bg-surface-100 text-gray-700 border border-surface-200;
+}
+
+/* 进度条样式 */
 .progress-bar {
-  @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+  @apply w-full h-2.5 bg-surface-200 rounded-full overflow-hidden shadow-inner;
 }
 
 .progress-value {
-  @apply h-full bg-blue-600 rounded-full max-h-2;
+  @apply h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-500 ease-out;
 }
 
-/* 阴影效果 */
-.shadow-card {
-  @apply shadow-lg;
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
 }
 
-/* 增加一些新的样式 */
-.dark {
-  background-color: #1a202c;
-  color: #ffffff;
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
 }
 
-.dark .card {
-  background-color: #2d3748;
-  color: #ffffff;
+::-webkit-scrollbar-thumb {
+  @apply bg-surface-300 rounded-full hover:bg-surface-400 transition-colors duration-200;
 }
-
-.dark .btn-primary {
-  background-color: #3182ce;
-}
-
-.dark .btn-secondary {
-  background-color: #4a5568;
-}
-
-.dark .input-field {
-  background-color: #2d3748;
-  color: #ffffff;
-  border-color: #4a5568;
-}
-
-/* 增加悬停效果 */
-.btn:hover {
-  transform: scale(1.05);
-}
-
-.card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-

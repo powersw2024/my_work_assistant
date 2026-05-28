@@ -43,6 +43,23 @@ pub struct ExpenseRecord {
     pub updated_at: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct ExpenseResponse {
+    pub id: i64,
+    pub project_id: i64,
+    pub amount: f64,
+    pub main_category_id: i64,
+    pub sub_category_id: i64,
+    pub description: Option<String>,
+    pub file_paths: Option<String>,
+    pub date: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub main_category: Option<String>,
+    pub sub_category: Option<String>,
+    pub voucher_type: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateExpenseDto {
     pub project_id: i64,

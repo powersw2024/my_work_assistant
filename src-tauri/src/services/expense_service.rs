@@ -1,11 +1,25 @@
-use crate::models::expense::{ExpenseRecord, ExpenseCategory, VoucherType, ExpenseFile, CreateExpenseDto, UpdateExpenseDto, CreateExpenseCategoryDto, CreateVoucherTypeDto};
+use crate::models::expense::{ExpenseRecord, ExpenseResponse, ExpenseCategory, VoucherType, ExpenseFile, CreateExpenseDto, UpdateExpenseDto, CreateExpenseCategoryDto, CreateVoucherTypeDto};
 use sqlx::SqlitePool;
 
 // ===== Expense Record Services =====
 
-pub async fn get_expenses_by_project(pool: &SqlitePool, project_id: i64) -> Result<Vec<ExpenseRecord>, String> {
-    let expenses = sqlx::query_as::<_, ExpenseRecord>(
-        "SELECT * FROM expense_records WHERE project_id = ? ORDER BY date DESC"
+pub async fn get_expenses_by_project(pool: &SqlitePool, project_id: i64) -> Result<Vec<ExpenseResponse>, String> {
+    let expenses = sqlx::query_as::<_, ExpenseResponse>(
+        r#"
+        SELECT 
+            e.*,
+            mc.name as main_category,
+            sc.name as sub_category,
+            GROUP_CONCAT(vt.name, ', ') as voucher_type
+        FROM expense_records e
+        LEFT JOIN expense_categories mc ON e.main_category_id = mc.id
+        LEFT JOIN expense_categories sc ON e.sub_category_id = sc.id
+        LEFT JOIN expense_voucher_types evt ON e.id = evt.expense_record_id
+        LEFT JOIN voucher_types vt ON evt.voucher_type_id = vt.id
+        WHERE e.project_id = ?
+        GROUP BY e.id
+        ORDER BY e.date DESC
+        "#
     )
     .bind(project_id)
     .fetch_all(pool)

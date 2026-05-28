@@ -1,45 +1,59 @@
 <template>
-  <div class="flex">
+  <div class="flex flex-col md:flex-row gap-8">
     <!-- 时间轴列 -->
-    <div class="w-1/4 pr-6 border-r time-axis-container">
-      <!-- 时间轴连接线 -->
-      <div class="time-axis-line"></div>
+    <div class="w-full md:w-1/4 time-axis-container">
+      <div class="sticky top-6">
+        <!-- 时间轴连接线 -->
+        <div class="time-axis-line hidden md:block"></div>
 
-      <div :style="{ height: `${projectDays.length * 50}px` }" class="space-y-1">
-        <div v-for="(day, index) in projectDays" :key="index" :class="[
-          'py-2 px-3 rounded-lg cursor-pointer flex items-center time-axis-item transition-all duration-200 transform hover:scale-105',
-          hasLogOnDate(logs, day.date)
-            ? 'bg-blue-100 text-blue-800 shadow-md'
-            : 'text-gray-500 hover:bg-gray-100'
-        ]" @click="jumpToLogOnDate(day.date)" @dblclick="handleDateDoubleClick($event, day.date)"
-          :title="`${day.date} ${day.dayOfWeek}`">
-          <div :class="[
-            'time-axis-dot',
-            hasLogOnDate(logs, day.date) ? 'has-log' : ''
-          ]"></div>
-          <div class="flex flex-col ml-2">
-            <span class="text-sm font-medium">{{ formatDateShort(day.date) }}</span>
-            <span class="text-xs opacity-70">{{ day.dayOfWeek }}</span>
+        <div :style="{ minHeight: `${Math.min(projectDays.length * 50, 600)}px` }"
+          class="space-y-1.5 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+          <div v-for="(day, index) in projectDays" :key="index" :class="[
+            'py-2.5 px-4 md:pl-10 rounded-xl cursor-pointer flex items-center time-axis-item transition-all duration-300 transform',
+            hasLogOnDate(logs, day.date)
+              ? 'bg-primary-50 text-primary-700 shadow-sm hover:shadow-md border border-primary-100 hover:-translate-y-0.5'
+              : 'text-gray-500 hover:bg-surface-100 border border-transparent'
+          ]" @click="jumpToLogOnDate(day.date)" @dblclick="handleDateDoubleClick($event, day.date)"
+            :title="`${day.date} ${day.dayOfWeek}`">
+            <div :class="[
+              'time-axis-dot hidden md:block',
+              hasLogOnDate(logs, day.date) ? 'has-log' : ''
+            ]"></div>
+            <div class="flex flex-col md:ml-3">
+              <span class="text-sm font-bold tracking-tight">{{ formatDateShort(day.date) }}</span>
+              <span class="text-xs font-medium opacity-70 mt-0.5">{{ day.dayOfWeek }}</span>
+            </div>
+
+            <div v-if="hasLogOnDate(logs, day.date)" class="ml-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary-500" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 日志列表列 -->
-    <div class="w-3/4 pl-6">
-      <div class="mb-6">
-        <h2 class="text-xl font-bold text-gray-800">工作日志</h2>
+    <div class="w-full md:w-3/4">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-extrabold text-gray-900 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          工作日志
+        </h2>
       </div>
 
-      <LogList 
-        :logs="logs" 
-        :projectId="projectId" 
-        :personnel="settings?.personnel || []" 
-        @edit-log="editLog"
-        @delete-log="handleDeleteLog" 
-      />
+      <LogList :logs="logs" :projectId="projectId" :personnel="settings?.personnel || []" @edit-log="editLog"
+        @delete-log="handleDeleteLog" />
     </div>
-    
+
     <!-- 新增/编辑日志模态框 -->
     <NewLogModal v-if="showNewLogModal" :projectId="projectId" :initialData="editingLog"
       @close="showNewLogModal = false" @save="handleSaveLog" />
@@ -94,18 +108,31 @@ export default defineComponent({
     projectDays() {
       if (!this.project?.start_date) return [];
 
-      const startDate = new Date(this.project.start_date);
-      const endDate = this.project.end_date ? new Date(this.project.end_date) : null;
-      
+      const startDate = new Date(this.project.start_date + 'T00:00:00');
+
+      let endDateStr = this.project.end_date;
+      if (!endDateStr) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        endDateStr = `${year}-${month}-${day}`;
+      }
+      const endDate = new Date(endDateStr + 'T00:00:00');
+
       let currentDate = new Date(startDate);
-      currentDate.setHours(0, 0, 0, 0);
-      
+
       const days = [];
-      
-      while (endDate === null || currentDate <= endDate) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+
+      while (currentDate <= endDate) {
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
         const dayOfWeek = currentDate.toLocaleDateString('zh-CN', { weekday: 'short' });
         days.push({ date: dateStr, dayOfWeek });
+
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
@@ -171,34 +198,50 @@ export default defineComponent({
 
 .time-axis-line {
   position: absolute;
-  left: 16px;
+  left: 24px;
   top: 0;
   bottom: 0;
   width: 2px;
-  background-color: #e5e7eb;
+  background-color: #e2e8f0;
   z-index: 1;
 }
 
 .time-axis-item {
   position: relative;
-  padding-left: 32px;
 }
 
 .time-axis-dot {
   position: absolute;
-  left: 12px;
+  left: 20px;
   top: 50%;
   transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background-color: #e5e7eb;
+  background-color: #cbd5e1;
+  border: 2px solid white;
   z-index: 2;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s ease-in-out;
 }
 
 .time-axis-dot.has-log {
   background-color: #3b82f6;
-  transform: translateY(-50%) scale(1.2);
+  width: 12px;
+  height: 12px;
+  left: 19px;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
 }
 </style>

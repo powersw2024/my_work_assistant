@@ -1,24 +1,10 @@
 <template>
-  <div id="app" class="flex flex-col h-screen bg-gray-50">
-    <!-- HeaderComponent 已被移除 -->
+  <div id="app" class="flex flex-col min-h-screen bg-surface-50 text-gray-800">
     <router-view />
-    <NewProjectModal 
-      v-if="showNewProjectModal" 
-      @close="showNewProjectModal = false" 
-      @create="createProject" 
-    />
-    <LogEditModal 
-      v-if="showLogModal" 
-      :log-data="editingLog" 
-      :selected-date="selectedDate" 
-      @close="showLogModal = false" 
-      @save="saveLog" 
-    />
-    <SettingsModal 
-      v-if="showSettingsModal" 
-      @close="showSettingsModal = false" 
-      @save-settings="saveSettings"
-    />
+    <NewProjectModal v-if="showNewProjectModal" @close="showNewProjectModal = false" @create="createProject" />
+    <LogEditModal v-if="showLogModal" :log-data="editingLog" :selected-date="selectedDate" @close="showLogModal = false"
+      @save="saveLog" />
+    <SettingsModal v-if="showSettingsModal" @close="showSettingsModal = false" @save-settings="saveSettings" />
   </div>
 </template>
 
@@ -60,19 +46,10 @@ export default defineComponent({
     saveSettings(settings: Settings) {
       // 将设置保存到 localStorage
       localStorage.setItem('projectAppSettings', JSON.stringify(settings));
-      
+
       alert('设置已保存');
       this.showSettingsModal = false;
     }
   }
 });
 </script>
-
-<style>
-#app {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiasing;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-}
-</style>

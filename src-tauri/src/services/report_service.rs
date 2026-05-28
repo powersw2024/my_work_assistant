@@ -1,5 +1,5 @@
-use sqlx::SqlitePool;
 use serde::{Deserialize, Serialize};
+use sqlx::SqlitePool;
 
 #[derive(Serialize, Deserialize)]
 pub struct ProjectStatistics {
@@ -25,25 +25,23 @@ pub struct CategoryExpense {
 /// 获取项目统计数据（天数、伙食补贴）
 pub async fn get_project_statistics(
     pool: &SqlitePool,
-    project_id: i64
+    project_id: i64,
 ) -> Result<ProjectStatistics, String> {
     // 获取项目信息
     let project: (
-        String,  // start_date
-        Option<String>,  // end_date
-    ) = sqlx::query_as(
-        "SELECT start_date, end_date FROM projects WHERE id = ?"
-    )
-    .bind(project_id)
-    .fetch_one(pool)
-    .await
-    .map_err(|e| format!("获取项目信息失败: {}", e))?;
+        String,         // start_date
+        Option<String>, // end_date
+    ) = sqlx::query_as("SELECT start_date, end_date FROM projects WHERE id = ?")
+        .bind(project_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("获取项目信息失败: {}", e))?;
 
     let start_date = chrono::NaiveDate::parse_from_str(&project.0, "%Y-%m-%d")
         .map_err(|e| format!("解析开始日期失败: {}", e))?;
-    
+
     let today = chrono::Local::now().naive_local().date();
-    
+
     let end_date = if let Some(ref end_str) = project.1 {
         let parsed = chrono::NaiveDate::parse_from_str(end_str, "%Y-%m-%d")
             .map_err(|e| format!("解析结束日期失败: {}", e))?;
@@ -57,7 +55,40 @@ pub async fn get_project_statistics(
     };
 
     let days_count = (end_date - start_date).num_days() + 1;
-    let meal_allowance = days_count as f64 * 90.0;
+    let mut meal_allowance = days_count as f64 * 90.0;
+
+    // 获取该项目的所有餐费记录，以扣减伙食补贴
+    let meal_expenses: Vec<(String, Option<String>)> = sqlx::query_as(
+        r#"
+        SELECT e.date, e.description
+        FROM expenses e
+        JOIN categories c ON e.main_category_id = c.id
+        WHERE e.project_id = ? AND c.name = '餐费'
+        "#,
+    )
+    .bind(project_id)
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default();
+
+    for (_date_str, desc_opt) in meal_expenses {
+        let desc = desc_opt.unwrap_or_default();
+        if desc.contains("早") {
+            meal_allowance -= 20.0;
+        } else if desc.contains("午") || desc.contains("中") {
+            meal_allowance -= 35.0;
+        } else if desc.contains("晚") {
+            meal_allowance -= 35.0;
+        } else {
+            // 如果未指明时段，默认可能扣除全天或者什么都不做。这里假设默认按午/晚餐35元扣减
+            meal_allowance -= 35.0;
+        }
+    }
+
+    // 确保不为负数
+    if meal_allowance < 0.0 {
+        meal_allowance = 0.0;
+    }
 
     Ok(ProjectStatistics {
         project_days: days_count,
@@ -68,20 +99,20 @@ pub async fn get_project_statistics(
 /// 获取费用汇总统计
 pub async fn get_expense_summary(
     pool: &SqlitePool,
-    project_id: i64
+    project_id: i64,
 ) -> Result<ExpenseSummary, String> {
     // 使用原始查询获取所有费用和分类信息
     let expenses: Vec<(
-        i64,       // id
-        i64,       // project_id
-        f64,       // amount
-        i64,       // main_category_id
-        i64,       // sub_category_id
+        i64,            // id
+        i64,            // project_id
+        f64,            // amount
+        i64,            // main_category_id
+        i64,            // sub_category_id
         Option<String>, // description
         Option<String>, // file_paths
-        String,    // date
-        String,    // created_at
-        String,    // updated_at
+        String,         // date
+        String,         // created_at
+        String,         // updated_at
         Option<String>, // main_category.name
     )> = sqlx::query_as(
         r#"
@@ -93,7 +124,7 @@ pub async fn get_expense_summary(
         LEFT JOIN categories main_cat ON e.main_category_id = main_cat.id
         WHERE e.project_id = ? AND (main_cat.name IS NULL OR main_cat.name != '伙食补贴')
         ORDER BY e.date
-        "#
+        "#,
     )
     .bind(project_id)
     .fetch_all(pool)
@@ -101,32 +132,43 @@ pub async fn get_expense_summary(
     .map_err(|e| format!("获取费用列表失败: {}", e))?;
 
     // 计算各分类的费用统计
-    let mut category_totals: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
-    let mut invoice_category_totals: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+    let mut category_totals: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    let mut invoice_category_totals: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
 
     for exp in &expenses {
         let amount = exp.2; // amount
-        
+
         // 获取主分类名称
-        if let Some(ref cat_name) = exp.10 { // main_category_name
+        if let Some(ref cat_name) = exp.10 {
+            // main_category_name
             // 累计总费用
             *category_totals.entry(cat_name.clone()).or_insert(0.0) += amount;
-            
+
             // 简化处理：假设所有费用都有发票（如果有voucher_type关联）
             // TODO: 根据实际的数据库schema调整
-            *invoice_category_totals.entry(cat_name.clone()).or_insert(0.0) += amount;
+            *invoice_category_totals
+                .entry(cat_name.clone())
+                .or_insert(0.0) += amount;
         }
     }
 
     // 转换为向量并排序
     let mut category_breakdown: Vec<CategoryExpense> = category_totals
         .into_iter()
-        .map(|(name, amount)| CategoryExpense { category_name: name, amount })
+        .map(|(name, amount)| CategoryExpense {
+            category_name: name,
+            amount,
+        })
         .collect();
-    
+
     let mut invoice_category_breakdown: Vec<CategoryExpense> = invoice_category_totals
         .into_iter()
-        .map(|(name, amount)| CategoryExpense { category_name: name, amount })
+        .map(|(name, amount)| CategoryExpense {
+            category_name: name,
+            amount,
+        })
         .collect();
 
     category_breakdown.sort_by(|a, b| a.category_name.cmp(&b.category_name));

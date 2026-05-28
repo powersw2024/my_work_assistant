@@ -1,31 +1,25 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod commands;
 mod database;
 mod models;
 mod services;
-mod commands;
 
-use database::Database;
 use commands::{
-    project_commands,
-    work_log_commands,
-    expense_commands,
-    person_setting_commands,
-    report_commands
+    expense_commands, person_setting_commands, project_commands, report_commands, work_log_commands,
 };
+use database::Database;
 use std::path::PathBuf;
 use tauri::Manager;
 
 fn main() {
-    // 获取应用数据目录
-    let app_data_dir = dirs::data_local_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("project-management-app");
-    
+    // 获取当前运行目录作为应用数据目录
+    let app_data_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+
     // 数据库路径
     let db_path = app_data_dir.join("database.sqlite");
-    
+
     // 创建Tauri应用
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
@@ -35,14 +29,14 @@ fn main() {
             // 异步初始化数据库
             let app_handle = app.handle().clone();
             let db_path = db_path.clone();
-            
+
             tauri::async_runtime::spawn(async move {
                 match Database::new(&db_path).await {
                     Ok(db) => {
                         if let Err(e) = db.init_schema().await {
                             log::error!("数据库schema初始化失败: {}", e);
                         }
-                        
+
                         // 将数据库管理到状态中
                         app_handle.manage(db);
                         log::info!("数据库初始化完成");
@@ -52,7 +46,7 @@ fn main() {
                     }
                 }
             });
-            
+
             Ok(())
         })
         // 注册所有命令
@@ -91,6 +85,7 @@ fn main() {
             // 报表命令
             report_commands::get_project_statistics,
             report_commands::get_expense_summary,
+            report_commands::get_template_file,
         ])
         .run(tauri::generate_context!())
         .expect("运行Tauri应用时出错");

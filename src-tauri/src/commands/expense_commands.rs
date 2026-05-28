@@ -1,7 +1,7 @@
 use tauri::State;
 use crate::database::Database;
 use crate::models::expense::{
-    ExpenseRecord, ExpenseCategory, VoucherType, ExpenseFile,
+    ExpenseRecord, ExpenseResponse, ExpenseCategory, VoucherType, ExpenseFile,
     CreateExpenseDto, UpdateExpenseDto, CreateExpenseCategoryDto, CreateVoucherTypeDto
 };
 use crate::services::expense_service;
@@ -9,7 +9,7 @@ use crate::services::expense_service;
 // ===== Expense Record Commands =====
 
 #[tauri::command]
-pub async fn get_expenses(db: State<'_, Database>, project_id: i64) -> Result<Vec<ExpenseRecord>, String> {
+pub async fn get_expenses(db: State<'_, Database>, project_id: i64) -> Result<Vec<ExpenseResponse>, String> {
     expense_service::get_expenses_by_project(&db.pool, project_id).await
 }
 

@@ -205,5 +205,6 @@ export const settingsApi = {
 // ===== Report APIs =====
 export const reportApi = {
   getProjectStatistics: (projectId: number): Promise<ProjectStatistics> => invoke('get_project_statistics', { projectId }),
-  getExpenseSummary: (projectId: number): Promise<ExpenseSummary> => invoke('get_expense_summary', { projectId })
+  getExpenseSummary: (projectId: number): Promise<ExpenseSummary> => invoke('get_expense_summary', { projectId }),
+  getTemplateFile: (name: string): Promise<number[]> => invoke('get_template_file', { name })
 };

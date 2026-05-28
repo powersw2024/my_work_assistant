@@ -1,8 +1,18 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-      <div class="p-6">
-        <h2 class="text-xl font-bold mb-4">{{ logData.id ? '编辑日志' : '新建日志' }}</h2>
+  <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col transform transition-all duration-300 scale-100 opacity-100">
+      <div class="p-6 flex-1 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-surface-100">
+          <h2 class="text-2xl font-extrabold text-gray-900">{{ logData.id ? '编辑日志' : '新建日志' }}</h2>
+          <button 
+            @click="onModalClose" 
+            class="text-gray-400 hover:text-rose-500 hover:bg-rose-50 p-2 rounded-xl transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         
         <LogForm 
           ref="logFormRef"
@@ -13,20 +23,17 @@
           @submit="handleLogSubmit"
         />
         
-        <div class="flex justify-end space-x-3 mt-4">
+        <div class="flex justify-end space-x-3 mt-8 pt-6 border-t border-surface-100">
           <button
             type="button"
             @click="onModalClose"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 flex items-center"
+            class="btn btn-secondary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
             取消
           </button>
           <button 
             @click="submitForm" 
-            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="btn btn-primary"
           >
             保存
           </button>
